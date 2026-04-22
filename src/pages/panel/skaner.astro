@@ -1,0 +1,11 @@
+---
+export const prerender = false;
+import Layout from '../../layouts/Layout.astro';
+import DashboardLayout from '../../components/dashboard/DashboardLayout.svelte';
+import TabScanner from '../../components/dashboard/TabScanner.svelte';
+---
+<Layout title="Raveomat | Skaner Biletów">
+  <DashboardLayout activePath="/panel/skaner" client:only="svelte">
+    <TabScanner client:only="svelte" />
+  </DashboardLayout>
+</Layout>

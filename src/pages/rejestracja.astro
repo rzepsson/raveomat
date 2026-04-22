@@ -1,0 +1,67 @@
+---
+import Layout from "../layouts/Layout.astro";
+import RegisterForm from "../components/RegisterForm.svelte";
+---
+
+<Layout
+  title="Rejestracja | Raveomat"
+  description="Zarejestruj się w Raveomat i kupuj bilety na najlepsze imprezy techno i rave w Europie."
+>
+  <main class="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <div class="absolute inset-0 z-0">
+      <video
+        autoplay
+        muted
+        loop
+        playsinline
+        class="w-full h-full object-cover"
+      >
+        <source src="/rave_video.mp4" type="video/mp4" />
+      </video>
+      <div class="absolute inset-0 bg-dark/80 backdrop-blur-2xl"></div>
+    </div>
+
+    <div class="relative z-10 w-full px-4 py-32">
+      <div class="max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+          <div class="hidden lg:flex flex-col justify-center pr-8">
+            <div class="relative">
+              <div class="absolute -left-8 -top-8 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+              <div class="absolute -right-4 bottom-0 w-48 h-48 bg-primary/5 rounded-full blur-2xl"></div>
+            </div>
+            
+            <h1 class="text-5xl xl:text-6xl font-display font-extrabold tracking-tighter text-foreground uppercase leading-[0.9] mb-8 relative z-10">
+              Dołącz do<br />
+              <span class="text-primary">Nas</span>
+            </h1>
+            
+            <ul class="space-y-4 text-lg">
+              <li class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-primary shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span class="text-muted font-medium">Łatwy dostęp do zakupionych biletów</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-primary shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span class="text-muted font-medium">Szybkie i bezpieczne płatności</span>
+              </li>
+              <li class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-primary shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span class="text-muted font-medium">Powiadomienia o nowych wydarzeniach</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="flex justify-center lg:justify-end mt-5">
+            <RegisterForm client:load />
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>

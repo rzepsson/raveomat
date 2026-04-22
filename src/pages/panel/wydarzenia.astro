@@ -1,0 +1,11 @@
+---
+export const prerender = false;
+import Layout from '../../layouts/Layout.astro';
+import DashboardLayout from '../../components/dashboard/DashboardLayout.svelte';
+import TabEvents from '../../components/dashboard/TabEvents.svelte';
+---
+<Layout title="Raveomat | Zarządzanie Wydarzeniami">
+  <DashboardLayout activePath="/panel/wydarzenia" client:only="svelte">
+    <TabEvents client:only="svelte" />
+  </DashboardLayout>
+</Layout>

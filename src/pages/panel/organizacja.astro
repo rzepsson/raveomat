@@ -1,0 +1,11 @@
+---
+export const prerender = false;
+import Layout from '../../layouts/Layout.astro';
+import DashboardLayout from '../../components/dashboard/DashboardLayout.svelte';
+import TabOrganization from '../../components/dashboard/TabOrganization.svelte';
+---
+<Layout title="Raveomat | Twoja Organizacja">
+  <DashboardLayout activePath="/panel/organizacja" client:only="svelte">
+    <TabOrganization client:only="svelte" />
+  </DashboardLayout>
+</Layout>

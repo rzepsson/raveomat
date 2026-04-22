@@ -1,0 +1,33 @@
+---
+import { ClientRouter } from "astro:transitions";
+import '../styles/global.css';
+import Header from '../components/Header.svelte';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const {
+  title,
+  description = "Raveomat | Bilety na najlepsze imprezy Rave"
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="pl" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/rave_video.mp4" as="video" type="video/mp4" />
+    <ClientRouter />
+  </head>
+  <body class="min-h-screen bg-dark">
+    <Header showLogo={true} client:only="svelte" />
+    <slot />
+  </body>
+</html>

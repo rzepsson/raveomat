@@ -1,0 +1,11 @@
+---
+export const prerender = false;
+import Layout from '../../layouts/Layout.astro';
+import DashboardLayout from '../../components/dashboard/DashboardLayout.svelte';
+import TabPromoter from '../../components/dashboard/TabPromoter.svelte';
+---
+<Layout title="Raveomat | Tryb Promotora">
+  <DashboardLayout activePath="/panel/promotor" client:only="svelte">
+    <TabPromoter client:only="svelte" />
+  </DashboardLayout>
+</Layout>

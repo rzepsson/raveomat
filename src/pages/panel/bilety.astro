@@ -1,0 +1,11 @@
+---
+export const prerender = false;
+import Layout from '../../layouts/Layout.astro';
+import DashboardLayout from '../../components/dashboard/DashboardLayout.svelte';
+import TabTickets from '../../components/dashboard/TabTickets.svelte';
+---
+<Layout title="Raveomat | Moje Bilety">
+  <DashboardLayout activePath="/panel/bilety" client:only="svelte">
+    <TabTickets client:only="svelte" />
+  </DashboardLayout>
+</Layout>

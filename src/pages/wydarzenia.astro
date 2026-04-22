@@ -1,0 +1,13 @@
+---
+import Layout from "../layouts/Layout.astro";
+import TicketGrid from "../components/TicketGrid.svelte";
+---
+
+<Layout
+  title="Wydarzenia | Raveomat"
+  description="Przeglądaj wszystkie imprezy techno, house, drum & bass i trance w Europie. Kup bilety online bezpiecznie i szybko."
+>
+  <main class="pt-20">
+    <TicketGrid client:only="svelte" />
+  </main>
+</Layout>

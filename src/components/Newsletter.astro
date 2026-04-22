@@ -1,0 +1,55 @@
+---
+---
+
+<section class="py-32 px-6 lg:px-8 bg-dark relative border-y border-white/5 overflow-hidden">
+  <div class="absolute inset-0 z-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at center, white 1.5px, transparent 1.5px); background-size: 32px 32px;"></div>
+  
+  <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-32 bg-primary/10 blur-[100px] rounded-full z-0 pointer-events-none"></div>
+
+  <div class="relative z-10 max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-20">
+
+    <div class="flex-1 text-center lg:text-left">
+      <div class="inline-flex items-center justify-center lg:justify-start gap-3 mb-6 w-full">
+        <span class="w-8 h-0.5 bg-primary"></span>
+        <span class="text-xs font-bold uppercase tracking-[0.3em] text-primary">
+          Ticket Alerts
+        </span>
+      </div>
+
+      <h2 class="text-4xl sm:text-5xl md:text-6xl font-display font-extrabold tracking-tighter text-foreground uppercase mb-6 leading-[0.9]">
+        Nie przegap dropu
+      </h2>
+
+      <p class="text-lg text-muted font-light max-w-xl mx-auto lg:mx-0 leading-relaxed">
+        Pule Early Bird na najlepsze imprezy znikają w minuty. Zapisz się, aby otrzymywać powiadomienia o line-upach i startach sprzedaży w Twojej okolicy. Zero spamu.
+      </p>
+    </div>
+
+    <div class="w-full lg:w-auto flex-1 max-w-md mx-auto lg:mx-0 lg:ml-auto border border-white/10 bg-dark/50 backdrop-blur-md p-6 sm:p-8">
+      <form class="flex flex-col gap-4" action="#" method="POST">
+        <div class="relative">
+          <label for="email" class="sr-only">Adres email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Twój adres e-mail"
+            required
+            class="w-full px-6 py-4 bg-white/5 border border-white/10 text-foreground placeholder:text-muted/50 focus:outline-none focus:border-primary focus:bg-white/10 transition-all font-medium rounded-none"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full px-8 py-4 font-bold text-dark bg-primary uppercase tracking-widest transition-all duration-300 hover:bg-white active:scale-[0.98] rounded-none shadow-[0_0_20px_rgba(162,255,0,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+        >
+          Zapisz się
+        </button>
+      </form>
+      
+      <p class="mt-5 text-[10px] font-bold text-muted uppercase tracking-[0.15em] text-center">
+        Szanujemy Twoją prywatność. Możesz wypisać się w dowolnej chwili.
+      </p>
+    </div>
+
+  </div>
+</section>
