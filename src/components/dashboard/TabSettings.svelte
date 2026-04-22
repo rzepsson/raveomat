@@ -1,7 +1,9 @@
 <script lang="ts">
+  import type { User } from "@supabase/supabase-js";
   import { authUser } from "../../lib/authStore";
+  import Icon from "../Icon.svelte";
 
-  let currentUser: any = $state(null);
+  let currentUser: User | null = $state(null);
 
   $effect(() => {
     const unsub = authUser.subscribe((value) => {
@@ -15,7 +17,7 @@
   <div class="bg-white/5 border border-white/10 p-8">
     <div class="flex items-center justify-between mb-8">
       <span class="text-[10px] uppercase tracking-[0.3em] text-primary">Tożsamość</span>
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <Icon name="user" size={5} class="text-muted" />
     </div>
     
     <div class="space-y-6">

@@ -2,34 +2,24 @@
   import { onMount } from "svelte";
   import { supabase } from "../lib/supabase";
   import TicketCard from "./TicketCard.svelte";
+  import type { TicketEvent, EventGenre, EventType, EventStatus } from "../lib/types";
+  import { DEFAULT_GENRE, DEFAULT_TYPE, DEFAULT_STATUS } from "../lib/types";
+  import Icon from "./Icon.svelte";
 
-  interface SupabaseEventRow {
+  type GenreFilter = "all" | EventGenre;
+  type TypeFilter = "all" | EventType;
+
+  interface SupabaseRow {
     id: string;
     title: string;
     date: string;
     venue: string;
     price: number;
-    status: "available" | "soldout";
-    genre: "techno" | "house" | "dnb" | "trance";
-    type: "club" | "festival" | "outdoor";
+    status?: EventStatus;
+    genre?: EventGenre;
+    type?: EventType;
     image_url?: string;
-    imageUrl?: string;
   }
-
-  interface TicketEvent {
-    id: string;
-    title: string;
-    date: string;
-    venue: string;
-    price: number;
-    status: "available" | "soldout";
-    genre: "techno" | "house" | "dnb" | "trance";
-    type: "club" | "festival" | "outdoor";
-    imageUrl?: string;
-  }
-
-  type GenreFilter = "all" | "techno" | "house" | "dnb" | "trance";
-  type TypeFilter = "all" | "club" | "festival" | "outdoor";
 
   let events = $state<TicketEvent[]>([]);
   let isLoading = $state(true);
@@ -41,8 +31,9 @@
 
   const filteredEvents = $derived.by(() => {
     return events.filter((event) => {
-      const searchMatch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          event.venue.toLowerCase().includes(searchQuery.toLowerCase());
+      const query = searchQuery.toLowerCase();
+      const searchMatch = event.title.toLowerCase().includes(query) || 
+                          event.venue.toLowerCase().includes(query);
       const genreMatch = activeGenreFilter === "all" || event.genre === activeGenreFilter;
       const typeMatch = activeTypeFilter === "all" || event.type === activeTypeFilter;
       
@@ -50,32 +41,35 @@
     });
   });
 
-  const technoEvents = $derived.by(() => events.filter((e) => e.genre === "techno" && e.type === "club").slice(0, 3));
-  const festivalEvents = $derived.by(() => events.filter((e) => e.type === "festival").slice(0, 3));
-
+  const technoEvents = $derived(events.filter((e) => e.genre === "techno" && e.type === "club").slice(0, 3));
+  const festivalEvents = $derived(events.filter((e) => e.type === "festival").slice(0, 3));
   const hasActiveFilters = $derived(searchQuery.length > 0 || activeGenreFilter !== "all" || activeTypeFilter !== "all");
 
   onMount(async () => {
-    const { data, error } = await supabase.from("events").select("*");
-    if (error) {
-      errorMessage = error.message;
+    try {
+      const { data, error } = await supabase.from("events").select("*");
+      if (error) {
+        errorMessage = error.message;
+        return;
+      }
+      if (data) {
+        events = (data as SupabaseRow[]).map((event) => ({
+          id: event.id,
+          title: event.title,
+          date: event.date,
+          venue: event.venue,
+          price: event.price,
+          status: event.status || DEFAULT_STATUS,
+          genre: event.genre || DEFAULT_GENRE,
+          type: event.type || DEFAULT_TYPE,
+          imageUrl: event.image_url,
+        }));
+      }
+    } catch (err) {
+      errorMessage = "Nie udało się połączyć z serwerem.";
+    } finally {
       isLoading = false;
-      return;
     }
-    if (data) {
-      events = data.map((event: SupabaseEventRow) => ({
-        id: event.id,
-        title: event.title,
-        date: event.date,
-        venue: event.venue,
-        price: event.price,
-        status: event.status || "available",
-        genre: event.genre || "techno",
-        type: event.type || "club",
-        imageUrl: event.image_url || event.imageUrl,
-      }));
-    }
-    isLoading = false;
   });
 
   function clearFilters() {
@@ -99,9 +93,7 @@
     <div class="mb-16 bg-white/5 border border-white/10 rounded-none p-2 backdrop-blur-xl flex flex-col md:flex-row gap-2">
       
       <div class="relative flex-1">
-        <svg class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
+        <Icon name="search" size={5} class="absolute left-5 top-1/2 -translate-y-1/2 text-muted" />
         <input 
           type="text" 
           bind:value={searchQuery}
@@ -123,9 +115,7 @@
           <option value="dnb" class="bg-dark text-foreground">Drum & Bass</option>
           <option value="trance" class="bg-dark text-foreground">Trance</option>
         </select>
-        <svg class="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
+        <Icon name="chevron-down" size={5} class="absolute right-5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
       </div>
 
       <div class="hidden md:block w-px h-8 bg-white/10 self-center"></div>
@@ -140,9 +130,7 @@
           <option value="festival" class="bg-dark text-foreground">Festiwal</option>
           <option value="outdoor" class="bg-dark text-foreground">Plener</option>
         </select>
-        <svg class="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
+        <Icon name="chevron-down" size={5} class="absolute right-5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
       </div>
     </div>
 
@@ -174,11 +162,7 @@
 
       {:else if errorMessage}
         <div class="flex flex-col items-center justify-center py-32 text-center border border-dashed border-accent/30 rounded-none">
-          <svg class="w-16 h-16 text-accent mb-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
+          <Icon name="info" size={16} class="text-accent mb-4" />
           <h4 class="text-xl font-bold text-foreground mb-2">Błąd pobierania danych</h4>
           <p class="text-muted">{errorMessage}</p>
         </div>
@@ -199,9 +183,7 @@
 
         {#if filteredEvents.length === 0}
           <div class="flex flex-col items-center justify-center py-32 text-center border border-dashed border-white/10 rounded-none">
-            <svg class="w-16 h-16 text-muted mb-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
+            <Icon name="search" size={16} class="text-muted mb-4" />
             <h4 class="text-xl font-bold text-foreground mb-2">Brak wyników</h4>
             <p class="text-muted">Spróbuj zmienić filtry lub wyszukać inną frazę.</p>
           </div>

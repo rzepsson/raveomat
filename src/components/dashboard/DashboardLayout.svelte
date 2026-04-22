@@ -1,17 +1,19 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { authUser, authIsLoading, userOrganizations } from "../../lib/authStore";
+  import type { Snippet } from "svelte";
+  import type { User } from "@supabase/supabase-js";
+  import { authUser, authIsLoading, userOrganizations, initializeAuth, startAuthStateListener } from "../../lib/authStore";
   import type { OrganizationMembership } from "../../lib/authStore";
   import Sidebar from "./Sidebar.svelte";
 
   interface Props {
     activePath: string;
-    children?: any;
+    children?: Snippet;
   }
 
   let { activePath, children }: Props = $props();
 
-  let currentUser: any = $state(null);
+  let currentUser: User | null = $state(null);
   let isLoading = $state(true);
   let organizations = $state<readonly OrganizationMembership[]>([]);
   let isPromoter = $state(false);
@@ -35,25 +37,31 @@
     };
   });
 
+  onMount(async () => {
+    await initializeAuth();
+    startAuthStateListener();
+  });
+
   $effect(() => {
     if (!isLoading && currentUser === null) {
       window.location.href = "/?login=1";
     }
   });
 
+  const TAB_LABELS: Record<string, string> = {
+    bilety: "Moje Bilety",
+    ustawienia: "Ustawienia Konta",
+    promotor: "Tryb Promotora",
+    organizacja: "Twoja Organizacja",
+    wydarzenia: "Zarządzanie Wydarzeniami",
+    skaner: "Skaner Biletów",
+    panel: "Panel",
+  };
+
   function extractTabLabel(path: string): string {
     const parts = path.split("/");
     const tab = parts[parts.length - 1] || "panel";
-    const labels: Record<string, string> = {
-      bilety: "Moje Bilety",
-      ustawienia: "Ustawienia Konta",
-      promotor: "Tryb Promotora",
-      organizacja: "Twoja Organizacja",
-      wydarzenia: "Zarządzanie Wydarzeniami",
-      skaner: "Skaner Biletów",
-      panel: "Panel",
-    };
-    return labels[tab] || tab.toUpperCase();
+    return TAB_LABELS[tab] || tab.toUpperCase();
   }
 
   function extractTabId(path: string): string {
@@ -107,7 +115,9 @@
         </header>
 
         <div class="dashboard-content">
-          {@render children?.()}
+          {#if children}
+            {@render children()}
+          {/if}
         </div>
 
       </div>

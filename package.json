@@ -16,6 +16,7 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.8",
     "@astrojs/node": "^10.0.5",
     "@astrojs/svelte": "^8.0.5",
     "@supabase/supabase-js": "^2.104.0",

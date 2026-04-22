@@ -6,20 +6,40 @@ import Collectives from "../components/Collectives.astro";
 import Newsletter from "../components/Newsletter.astro";
 import Contact from "../components/Contact.astro";
 import { supabase } from "../lib/supabase";
+import type { ProEvent, EventRow } from "../lib/types";
 
-const { data: proEventsData } = await supabase
-  .from("events")
-  .select("id, title, subtitle, date, venue, price, image_url")
-  .eq("promo_tier", "pro")
-  .order("date", { ascending: true })
-  .limit(10);
+let proEventsData: ProEvent[] = [];
+let allEventsData: EventRow[] = [];
 
-const { data: allEventsData } = await supabase
-  .from("events")
-  .select("id, title, date, venue, price, status, promo_tier, genre, type, image_url")
-  .gte("date", new Date().toISOString())
-  .order("date", { ascending: true })
-  .limit(30);
+try {
+  const proResult = await supabase
+    .from("events")
+    .select("id, title, subtitle, date, venue, price, image_url")
+    .eq("promo_tier", "pro")
+    .order("date", { ascending: true })
+    .limit(10);
+
+  if (proResult.error) {
+    console.error("Failed to fetch pro events:", proResult.error.message);
+  } else {
+    proEventsData = proResult.data || [];
+  }
+
+  const allResult = await supabase
+    .from("events")
+    .select("id, title, date, venue, price, status, promo_tier, genre, type, image_url")
+    .gte("date", new Date().toISOString())
+    .order("date", { ascending: true })
+    .limit(30);
+
+  if (allResult.error) {
+    console.error("Failed to fetch all events:", allResult.error.message);
+  } else {
+    allEventsData = allResult.data || [];
+  }
+} catch (err) {
+  console.error("Supabase connection error:", err);
+}
 ---
 
 <Layout
@@ -27,8 +47,8 @@ const { data: allEventsData } = await supabase
   description="Raveomat - Twój biletomautomat na najlepsze imprezy Techno i Rave w Europie. Kup bilety online bezpiecznie i szybko."
 >
   <main>
-    <Hero initialProEvents={proEventsData || []} />
-    <FeaturedEvents initialEvents={allEventsData || []} client:load />
+    <Hero initialProEvents={proEventsData} />
+    <FeaturedEvents initialEvents={allEventsData} client:load />
     <Collectives />
     <Newsletter />
     <Contact />

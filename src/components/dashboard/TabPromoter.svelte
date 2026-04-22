@@ -1,5 +1,6 @@
 <script lang="ts">
   import { supabase } from "../../lib/supabase";
+  import Icon from "../Icon.svelte";
 
   let inviteCode = $state("");
   let isLoading = $state(false);
@@ -17,7 +18,7 @@
     successMessage = "";
 
     try {
-      const { data, error } = await supabase.rpc("join_organization_by_code", {
+      const { error } = await supabase.rpc("join_organization_by_code", {
         p_invite_code: inviteCode.trim(),
       });
 
@@ -25,7 +26,6 @@
         errorMessage = error.message === "Invalid invite code" 
           ? "Nieprawidłowy kod dostępu" 
           : "Błąd połączenia. Spróbuj ponownie.";
-        isLoading = false;
         return;
       }
 
@@ -35,8 +35,7 @@
       setTimeout(() => {
         window.location.href = "/panel/organizacja";
       }, 800);
-
-    } catch (err) {
+    } catch {
       errorMessage = "Nieoczekiwany błąd. Spróbuj ponownie.";
     } finally {
       isLoading = false;
@@ -47,10 +46,7 @@
 <div class="max-w-2xl mx-auto">
   <div class="text-center mb-12">
     <div class="inline-flex items-center justify-center w-20 h-20 border-4 border-white/20 mb-8">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
-        <rect x="3" y="11" width="18" height="11" rx="0" ry="0"></rect>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-      </svg>
+      <Icon name="lock" size={10} class="text-primary" />
     </div>
     <h2 class="font-display text-4xl lg:text-5xl text-foreground uppercase tracking-tight mb-4">
       Dołącz do Organizacji
@@ -80,13 +76,13 @@
       </div>
 
       {#if errorMessage}
-        <div class="bg-red-500/10 border-4 border-red-500/30 px-6 py-4">
+        <div class="bg-red-500/10 border-4 border-red-500/30 px-6 py-4" role="alert">
           <p class="text-red-400 text-sm font-bold uppercase tracking-wider">{errorMessage}</p>
         </div>
       {/if}
 
       {#if successMessage}
-        <div class="bg-primary/10 border-4 border-primary/30 px-6 py-4">
+        <div class="bg-primary/10 border-4 border-primary/30 px-6 py-4" role="status">
           <p class="text-primary text-sm font-bold uppercase tracking-wider">{successMessage}</p>
         </div>
       {/if}

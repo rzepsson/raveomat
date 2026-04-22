@@ -2,6 +2,10 @@
   import { onMount } from "svelte";
   import { authUser, openAuthModal } from "../lib/authStore";
   import { supabase } from "../lib/supabase";
+  import type { EventDetails } from "../lib/types";
+  import { MAX_TICKETS_PER_PURCHASE } from "../lib/types";
+  import { optimizeImageUrl, formatDateLong, formatPrice, safePercent } from "../lib/utils";
+  import Icon from "./Icon.svelte";
 
   interface Props {
     id: string;
@@ -9,42 +13,15 @@
 
   let { id }: Props = $props();
 
-  interface EventDetails {
-    id: string;
-    title: string;
-    date: string;
-    venue: string;
-    price: number;
-    status: "available" | "soldout";
-    genre?: string;
-    type?: string;
-    image_url?: string;
-    description?: string;
-    total_tickets?: number;
-    sold_tickets?: number;
-    organizations?: {
-      name: string;
-    };
-  }
-
   let event = $state<EventDetails | null>(null);
   let isLoading = $state(true);
   let errorMessage = $state("");
   let isAuthenticated = $state(false);
   
   let ticketCount = $state(1);
-  const maxTickets = 4;
   const totalTickets = $derived(event?.total_tickets || 0);
   const remainingTickets = $derived(event ? (event.total_tickets || 0) - (event.sold_tickets || 0) : 0);
-
-  function optimizeImageUrl(url: string | undefined): string {
-    if (!url) return "";
-    if (url.includes("unsplash.com")) {
-      const separator = url.includes("?") ? "&" : "?";
-      return `${url}${separator}auto=format&fm=webp&fit=crop&w=1200&q=80`;
-    }
-    return url;
-  }
+  const availabilityPercent = $derived(safePercent(remainingTickets, totalTickets));
 
   onMount(() => {
     const unsubscribe = authUser.subscribe(user => {
@@ -65,9 +42,10 @@
           .single();
 
         if (error) throw error;
-        event = data;
-      } catch (err: any) {
-        errorMessage = err.message || "Nie udało się pobrać szczegółów wydarzenia.";
+        event = data as EventDetails;
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Nie udało się pobrać szczegółów wydarzenia.";
+        errorMessage = message;
       } finally {
         isLoading = false;
       }
@@ -76,41 +54,15 @@
     fetchEvent();
   });
 
-  const formattedDate = $derived.by(() => {
-    if (!event?.date) return "";
-    const dateObj = new Date(event.date);
-    return dateObj.toLocaleDateString("pl-PL", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  });
-
-  const formattedPrice = $derived.by(() => {
-    if (!event?.price) return "";
-    return new Intl.NumberFormat("pl-PL", {
-      style: "currency",
-      currency: "PLN",
-    }).format(event.price);
-  });
-
-  const formattedTotalPrice = $derived.by(() => {
-    if (!event?.price) return "";
-    return new Intl.NumberFormat("pl-PL", {
-      style: "currency",
-      currency: "PLN",
-    }).format(event.price * ticketCount);
-  });
+  const formattedDate = $derived(formatDateLong(event?.date ?? ""));
+  const formattedPrice = $derived(event?.price ? formatPrice(event.price) : "");
+  const formattedTotalPrice = $derived(event?.price ? formatPrice(event.price * ticketCount) : "");
 
   function handleCheckout() {
     if (!isAuthenticated) {
       openAuthModal();
       return;
     }
-    // TODO: Integracja Stripe/Bramki
   }
 </script>
 
@@ -176,7 +128,7 @@
           <div class="aspect-video w-full relative overflow-hidden bg-dark border border-white/10 mb-12">
             {#if event.image_url}
               <img
-                src={optimizeImageUrl(event.image_url)}
+                src={optimizeImageUrl(event.image_url, { width: 1200, quality: 80 })}
                 alt={event.title}
                 class="w-full h-full object-cover border border-primary/10"
               />
@@ -239,7 +191,7 @@
                 <div class="w-full h-0.5 bg-white/10">
                   <div 
                     class="h-full bg-primary" 
-                    style="width: {(remainingTickets / totalTickets) * 100}%"
+                    style="width: {availabilityPercent}%"
                   ></div>
                 </div>
               </div>
@@ -261,17 +213,17 @@
                     aria-label="Zmniejsz ilość biletów"
                     class="w-10 h-10 flex items-center justify-center text-muted hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <Icon name="minus" size={4} />
                   </button>
                   <span class="w-12 text-center font-display font-bold text-lg">{ticketCount}</span>
                   <button 
                     type="button"
-                    disabled={ticketCount >= maxTickets || event.status !== "available"}
-                    onclick={() => ticketCount < maxTickets && ticketCount++}
+                    disabled={ticketCount >= MAX_TICKETS_PER_PURCHASE || event.status !== "available"}
+                    onclick={() => ticketCount < MAX_TICKETS_PER_PURCHASE && ticketCount++}
                     aria-label="Zwiększ ilość biletów"
                     class="w-10 h-10 flex items-center justify-center text-muted hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <Icon name="plus" size={4} />
                   </button>
                 </div>
               </div>

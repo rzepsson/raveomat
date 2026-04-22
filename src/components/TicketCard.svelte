@@ -1,17 +1,9 @@
 <script lang="ts">
   import { reveal } from "../lib/actions/reveal";
-
-  interface TicketEvent {
-    id: string;
-    title: string;
-    date: string;
-    venue: string;
-    price: number;
-    status: string;
-    genre?: string;
-    type?: string;
-    imageUrl?: string;
-  }
+  import type { TicketEvent } from "../lib/types";
+  import { GENRE_LABELS, TYPE_LABELS } from "../lib/types";
+  import { optimizeImageUrl, formatDateShort, formatPrice } from "../lib/utils";
+  import Icon from "./Icon.svelte";
 
   interface Props {
     event: TicketEvent;
@@ -21,46 +13,8 @@
   let { event, index = 0 }: Props = $props();
 
   const staggerDelay = $derived(index * 75);
-
-  function optimizeImageUrl(url: string | undefined): string {
-    if (!url) return "";
-    if (url.includes("unsplash.com")) {
-      const separator = url.includes("?") ? "&" : "?";
-      return `${url}${separator}auto=format&fm=webp&fit=crop&w=600&q=75`;
-    }
-    return url;
-  }
-
-  const formattedDate = $derived.by(() => {
-    const dateObj = new Date(event.date);
-    return dateObj.toLocaleDateString("pl-PL", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  });
-
-  const formattedPrice = $derived.by(() => {
-    return new Intl.NumberFormat("pl-PL", {
-      style: "currency",
-      currency: "PLN",
-    }).format(event.price);
-  });
-
-  const genreLabels: Record<string, string> = {
-    techno: "Techno",
-    house: "House",
-    dnb: "DnB",
-    trance: "Trance",
-  };
-
-  const typeLabels: Record<string, string> = {
-    club: "Club",
-    festival: "Festival",
-    outdoor: "Outdoor",
-  };
+  const formattedDate = $derived(formatDateShort(event.date));
+  const formattedPrice = $derived(formatPrice(event.price));
 </script>
 
 <a 
@@ -86,12 +40,12 @@
     <div class="absolute top-4 left-4 flex flex-wrap gap-2">
       {#if event.genre}
         <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-primary border border-primary bg-dark/90 backdrop-blur-md">
-          {genreLabels[event.genre] || event.genre}
+          {GENRE_LABELS[event.genre] || event.genre}
         </span>
       {/if}
       {#if event.type}
         <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-foreground border border-white/30 bg-dark/90 backdrop-blur-md">
-          {typeLabels[event.type] || event.type}
+          {TYPE_LABELS[event.type] || event.type}
         </span>
       {/if}
     </div>
@@ -114,20 +68,12 @@
 
     <div class="flex-1 space-y-4 mb-6">
       <div class="flex items-center gap-4 text-muted text-sm font-medium">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
-          <rect width="18" height="18" x="3" y="4"></rect>
-          <line x1="16" x2="16" y1="2" y2="6"></line>
-          <line x1="8" x2="8" y1="2" y2="6"></line>
-          <line x1="3" x2="21" y1="10" y2="10"></line>
-        </svg>
+        <Icon name="calendar" size={4} class="text-primary shrink-0" />
         <time datetime={event.date} class="uppercase tracking-widest text-[11px] font-bold">{formattedDate}</time>
       </div>
 
       <div class="flex items-center gap-4 text-muted text-sm font-medium">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
-          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
-          <circle cx="12" cy="10" r="3"></circle>
-        </svg>
+        <Icon name="location" size={4} class="text-primary shrink-0" />
         <span class="truncate uppercase tracking-widest text-[11px] font-bold">{event.venue}</span>
       </div>
     </div>

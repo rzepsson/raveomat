@@ -1,7 +1,9 @@
 <script lang="ts">
   import { userOrganizations } from "../../lib/authStore";
+  import type { OrganizationMembership } from "../../lib/authStore";
+  import Icon from "../Icon.svelte";
 
-  let organizations = $state<readonly any[]>([]);
+  let organizations = $state<readonly OrganizationMembership[]>([]);
 
   $effect(() => {
     const unsub = userOrganizations.subscribe((value) => {
@@ -13,11 +15,7 @@
 
 {#if organizations.length === 0}
   <div class="border border-dashed border-white/10 bg-white/5 p-16 flex flex-col items-center justify-center text-center">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-muted mb-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="square">
-      <rect x="3" y="3" width="18" height="18" rx="0" ry="0"></rect>
-      <path d="M3 9h18"></path>
-      <path d="M9 21V9"></path>
-    </svg>
+    <Icon name="building" size={16} class="text-muted mb-6" />
     <h3 class="text-2xl font-display uppercase text-foreground mb-4 tracking-tighter">Brak Organizacji</h3>
     <p class="text-muted text-sm mb-8">Nie jesteś członkiem żadnej organizacji. Użyj kodu zaproszenia, aby dołączyć.</p>
     <a href="/panel/promotor" class="px-8 py-4 border border-primary text-primary font-bold text-xs uppercase tracking-widest hover:bg-primary hover:text-dark transition-colors">
@@ -43,7 +41,7 @@
               <span class="font-bold text-sm text-foreground uppercase tracking-widest">{org.role}</span>
             </div>
             <button title="Edytuj" class="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-white hover:text-dark transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              <Icon name="chevron-right" size={4} />
             </button>
           </div>
         </div>

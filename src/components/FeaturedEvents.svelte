@@ -1,48 +1,25 @@
 <script lang="ts">
   import TicketCard from "./TicketCard.svelte";
-
-  interface SupabaseEventRow {
-    id: string;
-    title: string;
-    date: string;
-    venue: string;
-    price: number;
-    status: "available" | "soldout";
-    promo_tier: "pro" | "basic" | "none";
-    genre?: "techno" | "house" | "dnb" | "trance";
-    type?: "club" | "festival" | "outdoor";
-    image_url?: string;
-  }
-
-  interface FeaturedEvent {
-    id: string;
-    title: string;
-    date: string;
-    venue: string;
-    price: number;
-    status: "available" | "soldout";
-    genre?: "techno" | "house" | "dnb" | "trance";
-    type?: "club" | "festival" | "outdoor";
-    imageUrl?: string;
-    promo_tier: "pro" | "basic" | "none";
-  }
+  import type { EventRow, TicketEvent } from "../lib/types";
+  import { DEFAULT_GENRE, DEFAULT_TYPE, DEFAULT_STATUS } from "../lib/types";
+  import Icon from "./Icon.svelte";
 
   interface Props {
-    initialEvents: SupabaseEventRow[];
+    initialEvents: EventRow[];
   }
 
   let { initialEvents }: Props = $props();
 
-  const allEvents = $derived(
+  const allEvents: TicketEvent[] = $derived(
     initialEvents.map((event) => ({
       id: event.id,
       title: event.title,
       date: event.date,
       venue: event.venue,
       price: event.price,
-      status: event.status || "available",
-      genre: event.genre || "techno",
-      type: event.type || "club",
+      status: event.status || DEFAULT_STATUS,
+      genre: event.genre || DEFAULT_GENRE,
+      type: event.type || DEFAULT_TYPE,
       imageUrl: event.image_url,
       promo_tier: event.promo_tier,
     }))
@@ -55,15 +32,6 @@
   const upcomingEvents = $derived(
     allEvents.filter((e) => e.promo_tier === "none")
   );
-
-  function optimizeImageUrl(url: string | undefined): string {
-    if (!url) return "";
-    if (url.includes("unsplash.com")) {
-      const separator = url.includes("?") ? "&" : "?";
-      return `${url}${separator}auto=format&fm=webp&fit=crop&w=600&q=75`;
-    }
-    return url;
-  }
 </script>
 
 <section id="bilety" class="py-32 px-6 lg:px-8 bg-dark relative z-20">
@@ -118,11 +86,7 @@
 
       {#if allEvents.length === 0}
         <div class="flex flex-col items-center justify-center py-32 text-center border border-dashed border-white/10 rounded-none">
-          <svg class="w-16 h-16 text-muted mb-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
+          <Icon name="info" size={16} class="text-muted mb-4" />
           <h4 class="text-xl font-bold text-foreground mb-2">Brak wydarzeń</h4>
           <p class="text-muted">Sprawdź ponownie wkrótce.</p>
         </div>

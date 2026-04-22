@@ -2,6 +2,10 @@
   import { supabase } from "../../lib/supabase";
   import { userOrganizations } from "../../lib/authStore";
   import type { OrganizationMembership } from "../../lib/authStore";
+  import type { EventGenre, EventType, EventStatus, ManagedEvent } from "../../lib/types";
+  import { GENRE_OPTIONS, TYPE_OPTIONS, CROP_CONTAINER_WIDTH, CROP_OUTPUT_WIDTH, CROP_ASPECT_RATIO } from "../../lib/types";
+  import { formatDateDashboard } from "../../lib/utils";
+  import Icon from "../Icon.svelte";
 
   interface Props {
     organizations?: OrganizationMembership[];
@@ -10,11 +14,11 @@
   let { organizations }: Props = $props();
 
   let activeOrganizationId = $state<string>("");
-  let currentView = $state<ViewState>("list");
-  let events = $state<EventData[]>([]);
+  let currentView = $state<"list" | "form">("list");
+  let events = $state<ManagedEvent[]>([]);
   let isLoading = $state(true);
   let errorMessage = $state("");
-  let selectedEvent = $state<EventData | null>(null);
+  let selectedEvent = $state<ManagedEvent | null>(null);
   let isSaving = $state(false);
   let formError = $state("");
 
@@ -32,40 +36,12 @@
   let imageFile = $state<File | null>(null);
   let originalImageSrc = $state("");
   let isCropping = $state(false);
-  let cropperCanvas = $state<HTMLCanvasElement | null>(null);
   let cropZone = $state({ x: 0, y: 0, width: 0, height: 0 });
   let isDragging = $state(false);
   let dragStart = $state({ x: 0, y: 0 });
-  let cropContainerWidth = $state(400);
   let cropContainerRef = $state<HTMLDivElement | null>(null);
   let imageNaturalWidth = $state(1);
   let imageNaturalHeight = $state(1);
-
-
-
-  const GENRE_OPTIONS: EventGenre[] = ["techno", "house", "dnb", "trance"];
-  const TYPE_OPTIONS: EventType[] = ["club", "festival", "outdoor"];
-
-  type ViewState = "list" | "form";
-  type EventGenre = "techno" | "house" | "dnb" | "trance";
-  type EventType = "club" | "festival" | "outdoor";
-  type EventStatus = "available" | "soldout" | "draft";
-
-  interface EventData {
-    id: string;
-    title: string;
-    date: string;
-    venue: string;
-    price: number;
-    totalTickets: number;
-    soldTickets: number;
-    genre: EventGenre;
-    type: EventType;
-    description: string;
-    imageUrl: string;
-    status: EventStatus;
-    organizationId: string;
-  }
 
   const effectiveOrganizations = $derived(
     organizations && organizations.length > 0 ? organizations : $userOrganizations
@@ -82,6 +58,22 @@
       loadEvents();
     }
   });
+
+  interface EventRow {
+    id: string;
+    title: string;
+    date: string;
+    venue: string;
+    price: number;
+    total_tickets: number;
+    sold_tickets: number;
+    genre: EventGenre;
+    type: EventType;
+    description: string;
+    image_url: string;
+    status: EventStatus;
+    organization_id: string;
+  }
 
   async function loadEvents() {
     if (!activeOrganizationId) return;
@@ -102,7 +94,7 @@
     }
 
     if (data) {
-      events = data.map((row: any) => ({
+      events = (data as EventRow[]).map((row) => ({
         id: row.id,
         title: row.title || "",
         date: row.date || "",
@@ -141,7 +133,7 @@
     currentView = "form";
   }
 
-  function openEditForm(event: EventData) {
+  function openEditForm(event: ManagedEvent) {
     selectedEvent = event;
     title = event.title;
     date = event.date;
@@ -190,8 +182,8 @@
   }
 
   function initCropZone(img: HTMLImageElement) {
-    const containerWidth = 400;
-    const aspectRatio = 4 / 3;
+    const containerWidth = CROP_CONTAINER_WIDTH;
+    const aspectRatio = CROP_ASPECT_RATIO;
     const containerHeight = containerWidth / aspectRatio;
     const scale = containerWidth / img.width;
     const scaledHeight = img.height * scale;
@@ -211,31 +203,36 @@
     };
   }
 
-  function handleCropMouseDown(e: MouseEvent) {
-    isDragging = true;
-    dragStart = { x: e.clientX, y: e.clientY };
+  function getClientPos(e: MouseEvent | TouchEvent): { clientX: number; clientY: number } {
+    if ("touches" in e && e.touches.length > 0) {
+      return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+    }
+    return { clientX: (e as MouseEvent).clientX, clientY: (e as MouseEvent).clientY };
   }
 
-  function handleCropMouseMove(e: MouseEvent) {
+  function handleDragStart(e: MouseEvent | TouchEvent) {
+    if ("touches" in e) e.preventDefault();
+    isDragging = true;
+    const pos = getClientPos(e);
+    dragStart = { x: pos.clientX, y: pos.clientY };
+  }
+
+  function handleDragMove(e: MouseEvent | TouchEvent) {
     if (!isDragging) return;
+    if ("touches" in e) e.preventDefault();
 
-    const deltaX = e.clientX - dragStart.x;
-    const deltaY = e.clientY - dragStart.y;
+    const pos = getClientPos(e);
+    const deltaX = pos.clientX - dragStart.x;
+    const deltaY = pos.clientY - dragStart.y;
 
-    const containerWidth = 400;
-    const aspectRatio = 4 / 3;
-    const containerHeight = containerWidth / aspectRatio;
-
-    const scaleX = imageNaturalWidth / containerWidth;
-    const scaleY = imageNaturalHeight / (imageNaturalWidth / containerWidth * imageNaturalHeight);
-
+    const containerHeight = CROP_CONTAINER_WIDTH / CROP_ASPECT_RATIO;
     const scaledZoneHeight = containerHeight;
-    const maxY = (imageNaturalHeight * (containerWidth / imageNaturalWidth)) - scaledZoneHeight;
+    const maxY = (imageNaturalHeight * (CROP_CONTAINER_WIDTH / imageNaturalWidth)) - scaledZoneHeight;
 
     let newX = cropZone.x + deltaX;
     let newY = cropZone.y + deltaY;
 
-    newX = Math.max(0, Math.min(containerWidth - cropZone.width, newX));
+    newX = Math.max(0, Math.min(CROP_CONTAINER_WIDTH - cropZone.width, newX));
     newY = Math.max(0, Math.min(maxY, newY));
 
     cropZone = {
@@ -245,10 +242,10 @@
       height: cropZone.height,
     };
 
-    dragStart = { x: e.clientX, y: e.clientY };
+    dragStart = { x: pos.clientX, y: pos.clientY };
   }
 
-  function handleCropMouseUp() {
+  function handleDragEnd() {
     isDragging = false;
   }
 
@@ -259,15 +256,14 @@
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const aspectRatio = 4 / 3;
-    const outputWidth = 800;
-    const outputHeight = Math.round(outputWidth / aspectRatio);
+    const outputWidth = CROP_OUTPUT_WIDTH;
+    const outputHeight = Math.round(outputWidth / CROP_ASPECT_RATIO);
 
     canvas.width = outputWidth;
     canvas.height = outputHeight;
 
-    const scaleX = imageNaturalWidth / 400;
-    const scaleY = imageNaturalHeight / (imageNaturalWidth / 400 * imageNaturalHeight);
+    const scaleX = imageNaturalWidth / CROP_CONTAINER_WIDTH;
+    const scaleY = imageNaturalHeight / (imageNaturalWidth / CROP_CONTAINER_WIDTH * imageNaturalHeight);
 
     const cropX = cropZone.x * scaleX;
     const cropY = cropZone.y * scaleY;
@@ -388,7 +384,7 @@
       description: description.trim(),
       image_url: finalImageUrl,
       organization_id: activeOrganizationId,
-      status: totalTickets > 0 ? "available" : "draft",
+      status: totalTickets > 0 ? "available" as const : "draft" as const,
     };
 
     if (selectedEvent) {
@@ -416,18 +412,6 @@
     await loadEvents();
     currentView = "list";
     isSaving = false;
-  }
-
-  function formatDate(dateStr: string): string {
-    if (!dateStr) return "—";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("pl-PL", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   }
 
   function getStatusLabel(status: EventStatus): string {
@@ -512,12 +496,7 @@
 
     {:else if events.length === 0}
       <div class="border border-dashed border-white/10 bg-white/5 p-16 flex flex-col items-center justify-center text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-muted mb-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="square">
-          <rect x="3" y="4" width="18" height="18" rx="0" ry="0"></rect>
-          <line x1="16" y1="2" x2="16" y2="6"></line>
-          <line x1="8" y1="2" x2="8" y2="6"></line>
-          <line x1="3" y1="10" x2="21" y2="10"></line>
-        </svg>
+        <Icon name="empty-calendar" size={16} class="text-muted mb-6" />
         <h3 class="text-2xl font-display uppercase text-foreground mb-4 tracking-tighter">Brak Wydarzeń</h3>
         <p class="text-muted text-sm mb-8">Utwórz pierwsze wydarzenie dla Twojej organizacji.</p>
         <button
@@ -542,7 +521,7 @@
 
         {#each events as event}
           <div class="grid grid-cols-[2fr_1fr_1fr_100px_100px_100px_80px] gap-4 px-6 py-5 border-b border-white/10 hover:bg-white/2 transition-colors items-center">
-            <span class="font-mono text-sm text-foreground">{formatDate(event.date)}</span>
+            <span class="font-mono text-sm text-foreground">{formatDateDashboard(event.date)}</span>
             <span class="text-foreground font-medium uppercase tracking-wide text-sm truncate">{event.title}</span>
             <span class="text-muted text-sm truncate">{event.venue}</span>
             <div class="flex justify-center">
@@ -558,10 +537,7 @@
                 aria-label="Edytuj wydarzenie"
                 class="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-white hover:text-dark transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
+                <Icon name="edit" size={4} />
               </button>
             </div>
           </div>
@@ -581,15 +557,18 @@
       </div>
 
       <div class="bg-white/5 border border-white/10 p-4">
-        <div class="relative select-none" style="max-width: 400px; margin: 0 auto;">
+        <div class="relative select-none" style="max-width: {CROP_CONTAINER_WIDTH}px; margin: 0 auto;">
           <div
             bind:this={cropContainerRef}
             class="relative overflow-hidden border-2 border-primary"
-            style="aspect-ratio: 4/3; background: #0A0A0A;"
-            onmousedown={handleCropMouseDown}
-            onmousemove={handleCropMouseMove}
-            onmouseup={handleCropMouseUp}
-            onmouseleave={handleCropMouseUp}
+            style="aspect-ratio: {CROP_ASPECT_RATIO}; background: #0A0A0A;"
+            onmousedown={handleDragStart}
+            onmousemove={handleDragMove}
+            onmouseup={handleDragEnd}
+            onmouseleave={handleDragEnd}
+            ontouchstart={handleDragStart}
+            ontouchmove={handleDragMove}
+            ontouchend={handleDragEnd}
             role="application"
             aria-label="Obszar kadrowania obrazu"
             tabindex="0"
@@ -644,10 +623,7 @@
           aria-label="Zamknij formularz"
           class="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-white hover:text-dark transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+          <Icon name="close" size={5} />
         </button>
       </div>
 
@@ -778,11 +754,7 @@
             {#if imageUrl}
               <img src={imageUrl} alt="Preview" class="w-full h-full object-cover" />
             {:else}
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                <rect x="3" y="3" width="18" height="18" rx="0" ry="0"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
+              <Icon name="image" size={16} class="text-muted mb-4" />
               <span class="text-muted text-sm uppercase tracking-widest">Wybierz obraz</span>
             {/if}
           </div>
@@ -813,7 +785,7 @@
         </div>
 
         {#if formError}
-          <div class="bg-red-500/10 border border-red-500/30 px-6 py-4">
+          <div class="bg-red-500/10 border border-red-500/30 px-6 py-4" role="alert">
             <p class="text-red-400 text-sm font-bold uppercase tracking-wider">{formError}</p>
           </div>
         {/if}

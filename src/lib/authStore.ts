@@ -16,28 +16,35 @@ export interface OrganizationMembership {
 
 export const userOrganizations = atom<OrganizationMembership[]>([]);
 
-interface AuthStateChangeResult {
-  data: {
-    subscription: {
-      unsubscribe: () => void;
-    };
-  };
-}
-
-let authStateChangeResult: AuthStateChangeResult | null = null;
+let authSubscription: { unsubscribe: () => void } | null = null;
+let isInitialized = false;
 
 function handleAuthStateChange(_event: string, session: Session | null) {
   authSession.set(session);
   authUser.set(session?.user ?? null);
 
   if (session?.user) {
-    loadUserOrganizations(session.user.id).then(() => {
-      authIsLoading.set(false);
-    });
+    loadUserOrganizations(session.user.id)
+      .catch((err) => {
+        console.error("Failed to load organizations:", err);
+        userOrganizations.set([]);
+      })
+      .finally(() => {
+        authIsLoading.set(false);
+      });
   } else {
-    clearUserOrganizations();
+    userOrganizations.set([]);
     authIsLoading.set(false);
   }
+}
+
+interface OrgRow {
+  role: string;
+  organizations: {
+    id: string;
+    name: string;
+    invite_code: string;
+  };
 }
 
 export async function loadUserOrganizations(userId: string): Promise<void> {
@@ -59,44 +66,50 @@ export async function loadUserOrganizations(userId: string): Promise<void> {
     return;
   }
 
-  const mapped: OrganizationMembership[] = (data || []).map((row: any) => ({
-    organizationId: row.organizations.id,
-    name: row.organizations.name,
-    role: row.role,
-    inviteCode: row.organizations.invite_code || "",
-  }));
+  const mapped: OrganizationMembership[] = ((data || []) as unknown as OrgRow[]).map(
+    (row) => ({
+      organizationId: row.organizations.id,
+      name: row.organizations.name,
+      role: row.role as "owner" | "admin" | "member",
+      inviteCode: row.organizations.invite_code || "",
+    })
+  );
 
   userOrganizations.set(mapped);
 }
 
-export function clearUserOrganizations(): void {
-  userOrganizations.set([]);
-}
+export async function initializeAuth(): Promise<void> {
+  if (isInitialized) return;
+  isInitialized = true;
 
-export function initializeAuth(): Promise<void> {
-  return new Promise((resolve) => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      authSession.set(session);
-      authUser.set(session?.user ?? null);
+  try {
+    const { data, error } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        loadUserOrganizations(session.user.id).then(() => {
-          authIsLoading.set(false);
-          resolve();
-        });
-      } else {
-        authIsLoading.set(false);
-        resolve();
-      }
-    });
-  });
+    if (error) {
+      console.error("Failed to get session:", error);
+      authIsLoading.set(false);
+      return;
+    }
+
+    const { session } = data;
+    authSession.set(session);
+    authUser.set(session?.user ?? null);
+
+    if (session?.user) {
+      await loadUserOrganizations(session.user.id);
+    }
+  } catch (err) {
+    console.error("Auth initialization failed:", err);
+  } finally {
+    authIsLoading.set(false);
+  }
 }
 
 export function startAuthStateListener(): void {
-  if (authStateChangeResult) {
-    return;
-  }
-  authStateChangeResult = supabase.auth.onAuthStateChange(handleAuthStateChange);
+  if (authSubscription) return;
+
+  const { data } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+  authSubscription = data.subscription;
 }
 
 export function openAuthModal(): void {
@@ -112,10 +125,9 @@ export async function signOut(): Promise<void> {
 }
 
 export function cleanupAuth(): void {
-  if (authStateChangeResult) {
-    authStateChangeResult.data.subscription.unsubscribe();
-    authStateChangeResult = null;
+  if (authSubscription) {
+    authSubscription.unsubscribe();
+    authSubscription = null;
   }
+  isInitialized = false;
 }
-
-startAuthStateListener();
