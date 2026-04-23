@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { authUser, openAuthModal } from "../lib/authStore";
-  import { supabase } from "../lib/supabase";
   import type { EventDetails } from "../lib/types";
   import { MAX_TICKETS_PER_PURCHASE } from "../lib/types";
   import { optimizeImageUrl, formatDateLong, formatPrice, safePercent } from "../lib/utils";
@@ -9,12 +8,13 @@
 
   interface Props {
     id: string;
+    initialEvent?: EventDetails | null;
   }
 
-  let { id }: Props = $props();
+  let { id, initialEvent = null }: Props = $props();
 
-  let event = $state<EventDetails | null>(null);
-  let isLoading = $state(true);
+  let event = $state<EventDetails | null>(initialEvent ?? null);
+  let isLoading = $state(!initialEvent);
   let errorMessage = $state("");
   let isAuthenticated = $state(false);
   
@@ -28,30 +28,6 @@
       isAuthenticated = user !== null;
     });
     return unsubscribe;
-  });
-
-  $effect(() => {
-    async function fetchEvent() {
-      isLoading = true;
-      errorMessage = "";
-      try {
-        const { data, error } = await supabase
-          .from("events")
-          .select("*, organizations!organization_id(name)")
-          .eq("id", id)
-          .single();
-
-        if (error) throw error;
-        event = data as EventDetails;
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Nie udało się pobrać szczegółów wydarzenia.";
-        errorMessage = message;
-      } finally {
-        isLoading = false;
-      }
-    }
-
-    fetchEvent();
   });
 
   const formattedDate = $derived(formatDateLong(event?.date ?? ""));

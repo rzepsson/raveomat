@@ -1,13 +1,46 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import TicketGrid from "../components/TicketGrid.svelte";
+import { createSupabaseServerClient } from "../lib/supabase.server";
+import type { EventGenre, EventType, EventStatus } from "../lib/types";
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+interface EventRow {
+  id: string;
+  title: string;
+  date: string;
+  venue: string;
+  price: number;
+  status?: EventStatus;
+  genre?: EventGenre;
+  type?: EventType;
+  image_url?: string;
+}
+
+const { data } = await supabase.from("events").select("*");
+
+const initialEvents = ((data || []) as EventRow[]).map((event) => ({
+  id: event.id,
+  title: event.title,
+  date: event.date,
+  venue: event.venue,
+  price: event.price,
+  status: event.status || "available",
+  genre: event.genre || "techno",
+  type: event.type || "club",
+  imageUrl: event.image_url,
+}));
 ---
 
 <Layout
   title="Wydarzenia | Raveomat"
   description="Przeglądaj wszystkie imprezy techno, house, drum & bass i trance w Europie. Kup bilety online bezpiecznie i szybko."
+  canonical="/wydarzenia"
+  ogType="website"
+  ogImage="/content/rave_poster.jpg"
 >
   <main class="pt-20">
-    <TicketGrid client:only="svelte" />
+    <TicketGrid initialEvents={initialEvents} client:load />
   </main>
 </Layout>

@@ -50,12 +50,20 @@
     isSubmitting = true;
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-      if (error) throw error;
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Wystąpił błąd. Spróbuj ponownie.");
+      }
+
       closeAuthModal();
+      window.location.reload();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Wystąpił błąd. Spróbuj ponownie.";
       errorMessage = message;
@@ -70,6 +78,9 @@
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
+        options: {
+          redirectTo: `${window.location.origin}/api/auth/callback`,
+        },
       });
       if (error) throw error;
     } catch (err: unknown) {

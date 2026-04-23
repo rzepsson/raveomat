@@ -3,9 +3,13 @@ export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
 import DashboardLayout from '../../components/dashboard/DashboardLayout.svelte';
 import TabScanner from '../../components/dashboard/TabScanner.svelte';
+
+const initialUser = Astro.locals.user
+  ? { id: Astro.locals.user.id, email: Astro.locals.user.email ?? "" }
+  : null;
 ---
 <Layout title="Raveomat | Skaner Biletów">
-  <DashboardLayout activePath="/panel/skaner" client:only="svelte">
+  <DashboardLayout activePath="/panel/skaner" initialUser={initialUser} client:load>
     <TabScanner client:only="svelte" />
   </DashboardLayout>
 </Layout>

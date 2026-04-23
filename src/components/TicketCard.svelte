@@ -2,7 +2,7 @@
   import { reveal } from "../lib/actions/reveal";
   import type { TicketEvent } from "../lib/types";
   import { GENRE_LABELS, TYPE_LABELS } from "../lib/types";
-  import { optimizeImageUrl, formatDateShort, formatPrice } from "../lib/utils";
+  import { buildImageSrcSet, optimizeImageUrl, formatDateShort, formatPrice } from "../lib/utils";
   import Icon from "./Icon.svelte";
 
   interface Props {
@@ -15,6 +15,9 @@
   const staggerDelay = $derived(index * 75);
   const formattedDate = $derived(formatDateShort(event.date));
   const formattedPrice = $derived(formatPrice(event.price));
+  const cardImageSrcSet = $derived(
+    buildImageSrcSet(event.imageUrl, { widths: [320, 480, 640, 800, 960], quality: 68 })
+  );
 </script>
 
 <a 
@@ -25,7 +28,9 @@
   <div class="aspect-4/3 relative overflow-hidden bg-dark border-b border-white/10">
     {#if event.imageUrl}
       <img
-        src={optimizeImageUrl(event.imageUrl)}
+        src={optimizeImageUrl(event.imageUrl, { width: 640, quality: 68 })}
+        srcset={cardImageSrcSet || undefined}
+        sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 33vw"
         alt={event.title}
         class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-90"
         loading="lazy"

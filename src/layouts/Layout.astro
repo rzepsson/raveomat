@@ -3,15 +3,43 @@ import { ClientRouter } from "astro:transitions";
 import '../styles/global.css';
 import Header from '../components/Header.svelte';
 
+type JsonLdNode = Record<string, unknown>;
+
 interface Props {
   title: string;
   description?: string;
+  canonical?: string;
+  ogImage?: string;
+  ogType?: "website" | "article" | string;
+  robots?: string;
+  twitterCard?: "summary" | "summary_large_image";
+  noindex?: boolean;
+  jsonLd?: JsonLdNode | JsonLdNode[];
 }
 
 const {
   title,
-  description = "Raveomat | Bilety na najlepsze imprezy Rave"
+  description = "Raveomat | Bilety na najlepsze imprezy Rave",
+  canonical,
+  ogImage,
+  ogType = "website",
+  robots,
+  twitterCard = "summary_large_image",
+  noindex = false,
+  jsonLd,
 } = Astro.props;
+
+const SITE_URL = "https://raveomat.pl";
+const resolvedCanonical = new URL(canonical ?? Astro.url.pathname, SITE_URL).toString();
+const resolvedOgImage = new URL(ogImage ?? "/content/rave_poster.jpg", SITE_URL).toString();
+const resolvedRobots = noindex
+  ? "noindex, nofollow"
+  : (robots ?? "index, follow, max-image-preview:large");
+const jsonLdNodes = Array.isArray(jsonLd) ? jsonLd : (jsonLd ? [jsonLd] : []);
+
+const initialUser = Astro.locals.user
+  ? { id: Astro.locals.user.id, email: Astro.locals.user.email ?? "" }
+  : null;
 ---
 
 <!doctype html>
@@ -20,17 +48,36 @@ const {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <meta name="robots" content={resolvedRobots} />
     <meta name="generator" content={Astro.generator} />
+    <link rel="canonical" href={resolvedCanonical} />
+
+    <meta property="og:site_name" content="Raveomat" />
+    <meta property="og:locale" content="pl_PL" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={resolvedCanonical} />
+    <meta property="og:image" content={resolvedOgImage} />
+
+    <meta name="twitter:card" content={twitterCard} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={resolvedOgImage} />
+
     <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://vrhiylrustvfxzixabmb.supabase.co" />
     <link rel="dns-prefetch" href="https://vrhiylrustvfxzixabmb.supabase.co" />
-    <link rel="preload" href="/_astro/@fontsource_inter_400.css" as="style" />
-    <link rel="preload" href="/_astro/@fontsource_syne_800.css" as="style" />
+    {
+      jsonLdNodes.map((node) => (
+        <script type="application/ld+json" set:html={JSON.stringify(node)} />
+      ))
+    }
     <ClientRouter />
   </head>
   <body class="min-h-screen bg-dark">
-    <Header showLogo={true} client:only="svelte" />
+    <Header showLogo={true} initialUser={initialUser} client:idle />
     <slot />
   </body>
 </html>

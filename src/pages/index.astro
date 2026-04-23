@@ -5,8 +5,11 @@ import FeaturedEvents from "../components/FeaturedEvents.svelte";
 import Collectives from "../components/Collectives.astro";
 import Newsletter from "../components/Newsletter.astro";
 import Contact from "../components/Contact.astro";
-import { supabase } from "../lib/supabase";
+import { createSupabaseServerClient } from "../lib/supabase.server";
 import type { ProEvent, EventRow } from "../lib/types";
+
+const SITE_URL = "https://raveomat.pl";
+const supabase = createSupabaseServerClient(Astro.cookies);
 
 let proEventsData: ProEvent[] = [];
 let allEventsData: EventRow[] = [];
@@ -40,11 +43,32 @@ try {
 } catch (err) {
   console.error("Supabase connection error:", err);
 }
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Raveomat",
+    url: SITE_URL,
+    inLanguage: "pl-PL",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Raveomat",
+    url: SITE_URL,
+    logo: `${SITE_URL}/favicon.svg`,
+  },
+];
 ---
 
 <Layout
   title="Raveomat - Bilety na najlepsze imprezy Techno i Rave"
   description="Raveomat - Twój biletomautomat na najlepsze imprezy Techno i Rave w Europie. Kup bilety online bezpiecznie i szybko."
+  canonical="/"
+  ogImage="/content/rave_poster.jpg"
+  ogType="website"
+  jsonLd={jsonLd}
 >
   <main>
     <Hero initialProEvents={proEventsData} />

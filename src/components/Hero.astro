@@ -16,11 +16,12 @@ import HeroCarousel from "./HeroCarousel.svelte";
       muted
       loop
       playsinline
-      preload="none"
+      preload="metadata"
       poster="/content/rave_poster.jpg"
       class="w-full h-full object-cover opacity-60"
     >
-      <source src="/content/rave_video.mp4" type="video/mp4" />
+      <source src="/content/rave_video_720.webm" type="video/webm" />
+      <source src="/content/rave_video_720.mp4" type="video/mp4" />
     </video>
     <div class="absolute inset-0 bg-linear-to-b from-dark/20 via-dark/60 to-dark"></div>
   </div>

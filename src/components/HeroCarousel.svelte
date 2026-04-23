@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fly, fade } from "svelte/transition";
   import type { ProEvent } from "../lib/types";
-  import { optimizeImageUrl, formatDateFull, formatPrice } from "../lib/utils";
+  import { buildImageSrcSet, optimizeImageUrl, formatDateFull, formatPrice } from "../lib/utils";
   import Icon from "./Icon.svelte";
 
   interface Props {
@@ -15,6 +15,9 @@
     return len > 0 ? Math.floor(Math.random() * len) : 0;
   })());
   const currentEvent = $derived(initialProEvents[currentIndex] || null);
+  const heroImageSrcSet = $derived(
+    buildImageSrcSet(currentEvent?.image_url, { widths: [480, 720, 960, 1200, 1600], quality: 68 })
+  );
 
   const formattedDate = $derived(formatDateFull(currentEvent?.date ?? ""));
   const formattedPrice = $derived(currentEvent?.price ? formatPrice(currentEvent.price) : "");
@@ -111,11 +114,14 @@
             <div class="relative aspect-3/4 w-full max-w-md ml-auto overflow-hidden bg-white/5 border border-white/10 shrink-0">
               {#if currentEvent?.image_url}
                 <img
-                  src={optimizeImageUrl(currentEvent.image_url, { width: 1200, quality: 80 })}
+                  src={optimizeImageUrl(currentEvent.image_url, { width: 960, quality: 68 })}
+                  srcset={heroImageSrcSet || undefined}
+                  sizes="(max-width: 1023px) 100vw, 33vw"
                   alt={currentEvent.title}
                   class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-90"
                   loading="eager"
                   decoding="sync"
+                  fetchpriority="high"
                 />
               {:else}
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-white/20 border border-white/10">

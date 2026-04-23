@@ -7,16 +7,49 @@
   import { formatDateDashboard } from "../../lib/utils";
   import Icon from "../Icon.svelte";
 
-  interface Props {
-    organizations?: OrganizationMembership[];
+  interface InitialEventRow {
+    id: string;
+    title: string;
+    date: string;
+    venue: string;
+    price: number;
+    total_tickets: number;
+    sold_tickets: number;
+    genre: EventGenre;
+    type: EventType;
+    description: string;
+    image_url: string;
+    status: EventStatus;
+    organization_id: string;
   }
 
-  let { organizations }: Props = $props();
+  interface Props {
+    organizations?: OrganizationMembership[];
+    initialEvents?: InitialEventRow[];
+  }
+
+  let { organizations, initialEvents = [] }: Props = $props();
 
   let activeOrganizationId = $state<string>("");
   let currentView = $state<"list" | "form">("list");
-  let events = $state<ManagedEvent[]>([]);
-  let isLoading = $state(true);
+  let events = $state<ManagedEvent[]>(
+    initialEvents.map((row) => ({
+      id: row.id,
+      title: row.title || "",
+      date: row.date || "",
+      venue: row.venue || "",
+      price: row.price || 0,
+      totalTickets: row.total_tickets || 0,
+      soldTickets: row.sold_tickets || 0,
+      genre: row.genre || "techno",
+      type: row.type || "club",
+      description: row.description || "",
+      imageUrl: row.image_url || "",
+      status: row.status || "draft",
+      organizationId: row.organization_id || "",
+    }))
+  );
+  let isLoading = $state(initialEvents.length === 0);
   let errorMessage = $state("");
   let selectedEvent = $state<ManagedEvent | null>(null);
   let isSaving = $state(false);
@@ -59,22 +92,6 @@
     }
   });
 
-  interface EventRow {
-    id: string;
-    title: string;
-    date: string;
-    venue: string;
-    price: number;
-    total_tickets: number;
-    sold_tickets: number;
-    genre: EventGenre;
-    type: EventType;
-    description: string;
-    image_url: string;
-    status: EventStatus;
-    organization_id: string;
-  }
-
   async function loadEvents() {
     if (!activeOrganizationId) return;
 
@@ -94,7 +111,7 @@
     }
 
     if (data) {
-      events = (data as EventRow[]).map((row) => ({
+      events = (data as InitialEventRow[]).map((row) => ({
         id: row.id,
         title: row.title || "",
         date: row.date || "",

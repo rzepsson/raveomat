@@ -5,14 +5,20 @@
   import AuthModal from "./AuthModal.svelte";
   import Icon from "./Icon.svelte";
 
-  interface Props {
-    showLogo?: boolean;
+  interface InitialUser {
+    id: string;
+    email: string;
   }
 
-  let { showLogo = false }: Props = $props();
+  interface Props {
+    showLogo?: boolean;
+    initialUser?: InitialUser | null;
+  }
+
+  let { showLogo = false, initialUser = null }: Props = $props();
 
   let user = $state<User | null>(null);
-  let isLoading = $state(true);
+  let isLoading = $state(initialUser === null);
   let isModalOpen = $state(false);
   let isMobileMenuOpen = $state(false);
 
@@ -35,6 +41,10 @@
   });
 
   onMount(async () => {
+    if (initialUser) {
+      authUser.set({ id: initialUser.id, email: initialUser.email } as User);
+      authIsLoading.set(false);
+    }
     await initializeAuth();
     startAuthStateListener();
   });
@@ -49,6 +59,7 @@
 
   async function handleSignOut() {
     await signOut();
+    window.location.href = "/";
   }
 
   function toggleMobileMenu() {

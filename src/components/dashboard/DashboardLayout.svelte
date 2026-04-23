@@ -6,12 +6,18 @@
   import type { OrganizationMembership } from "../../lib/authStore";
   import Sidebar from "./Sidebar.svelte";
 
+  interface InitialUser {
+    id: string;
+    email: string;
+  }
+
   interface Props {
     activePath: string;
+    initialUser?: InitialUser | null;
     children?: Snippet;
   }
 
-  let { activePath, children }: Props = $props();
+  let { activePath, initialUser = null, children }: Props = $props();
 
   let currentUser: User | null = $state(null);
   let isLoading = $state(true);
@@ -38,14 +44,12 @@
   });
 
   onMount(async () => {
+    if (initialUser) {
+      authUser.set({ id: initialUser.id, email: initialUser.email } as User);
+      authIsLoading.set(false);
+    }
     await initializeAuth();
     startAuthStateListener();
-  });
-
-  $effect(() => {
-    if (!isLoading && currentUser === null) {
-      window.location.href = "/?login=1";
-    }
   });
 
   const TAB_LABELS: Record<string, string> = {
@@ -78,21 +82,6 @@
     <div class="w-full max-w-4xl border border-white/10 p-8 flex flex-col gap-8 animate-pulse">
       <div class="h-12 w-64 bg-white/5"></div>
       <div class="h-64 w-full bg-white/5"></div>
-    </div>
-  </div>
-
-{:else if currentUser === null}
-  <div class="min-h-screen bg-dark pt-24 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-    <div class="absolute inset-0 opacity-20 pointer-events-none" style="background: repeating-linear-gradient(45deg, transparent, transparent 10px, #FF3D00 10px, #FF3D00 20px);"></div>
-    <div class="relative z-10 bg-dark border-2 border-primary p-12 text-center max-w-lg">
-      <h1 class="font-display text-4xl text-foreground uppercase tracking-tighter mb-4">Odmowa Dostępu</h1>
-      <p class="text-muted font-mono text-sm mb-8">Wykryto brak aktywnej sesji użytkownika. Autoryzacja wymagana do uzyskania dostępu do panelu.</p>
-      <button
-        onclick={() => window.location.href = "/"}
-        class="w-full py-4 bg-primary text-dark font-bold uppercase tracking-widest hover:bg-white transition-colors duration-300"
-      >
-        Wróć do strony głównej
-      </button>
     </div>
   </div>
 

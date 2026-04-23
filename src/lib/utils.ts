@@ -1,14 +1,42 @@
+interface ImageOptions {
+  width?: number;
+  quality?: number;
+}
+
+interface SrcSetOptions extends ImageOptions {
+  widths?: number[];
+}
+
+function isUnsplashUrl(url: string): boolean {
+  return url.includes("unsplash.com");
+}
+
 export function optimizeImageUrl(
   url: string | undefined,
-  options: { width?: number; quality?: number } = {}
+  options: ImageOptions = {}
 ): string {
   if (!url) return "";
-  const { width = 600, quality = 75 } = options;
-  if (url.includes("unsplash.com")) {
+  const { width = 600, quality = 70 } = options;
+  if (isUnsplashUrl(url)) {
     const separator = url.includes("?") ? "&" : "?";
     return `${url}${separator}auto=format&fm=webp&fit=crop&w=${width}&q=${quality}`;
   }
   return url;
+}
+
+export function buildImageSrcSet(
+  url: string | undefined,
+  options: SrcSetOptions = {}
+): string {
+  if (!url) return "";
+  if (!isUnsplashUrl(url)) return "";
+
+  const { widths = [320, 480, 640, 960, 1200], quality = 70 } = options;
+  const uniqueSortedWidths = [...new Set(widths)].sort((a, b) => a - b);
+
+  return uniqueSortedWidths
+    .map((width) => `${optimizeImageUrl(url, { width, quality })} ${width}w`)
+    .join(", ");
 }
 
 export function formatDate(

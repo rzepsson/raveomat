@@ -24,16 +24,18 @@
     isSubmitting = true;
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, fullName }),
       });
-      if (error) throw error;
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Wystąpił błąd. Spróbuj ponownie.");
+      }
+
       successMessage = "Sprawdź skrzynkę email, aby potwierdzić rejestrację.";
       fullName = "";
       email = "";
@@ -54,6 +56,9 @@
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
+        options: {
+          redirectTo: `${window.location.origin}/api/auth/callback`,
+        },
       });
       if (error) throw error;
     } catch {

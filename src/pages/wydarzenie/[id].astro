@@ -3,10 +3,80 @@ export const prerender = false;
 
 import Layout from "../../layouts/Layout.astro";
 import EventCheckout from "../../components/EventCheckout.svelte";
+import { createSupabaseServerClient } from "../../lib/supabase.server";
+import type { EventDetails } from "../../lib/types";
 
 const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect("/wydarzenia");
+}
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+const { data, error } = await supabase
+  .from("events")
+  .select("*, organizations!organization_id(name)")
+  .eq("id", id)
+  .single();
+
+if (error || !data) {
+  return Astro.redirect("/wydarzenia");
+}
+
+const initialEvent = data as EventDetails;
+
+const canonicalPath = `/wydarzenie/${id}`;
+const eventDescription = initialEvent.description?.trim()
+  ? initialEvent.description.trim().slice(0, 160)
+  : `${initialEvent.title} - ${initialEvent.venue}. Kup bilety na Raveomat.`;
+
+const offerAvailability =
+  initialEvent.status === "soldout"
+    ? "https://schema.org/SoldOut"
+    : "https://schema.org/InStock";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Event",
+  name: initialEvent.title,
+  startDate: initialEvent.date,
+  eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+  eventStatus: "https://schema.org/EventScheduled",
+  location: {
+    "@type": "Place",
+    name: initialEvent.venue,
+  },
+  organizer: initialEvent.organizations?.name
+    ? {
+        "@type": "Organization",
+        name: initialEvent.organizations.name,
+      }
+    : undefined,
+  image: initialEvent.image_url
+    ? [
+        initialEvent.image_url.startsWith("http")
+          ? initialEvent.image_url
+          : `https://raveomat.pl${initialEvent.image_url}`,
+      ]
+    : undefined,
+  offers: {
+    "@type": "Offer",
+    url: `https://raveomat.pl${canonicalPath}`,
+    price: initialEvent.price,
+    priceCurrency: "PLN",
+    availability: offerAvailability,
+  },
+};
 ---
 
-<Layout title="Wydarzenie | Raveomat">
-  <EventCheckout id={id!} client:load />
+<Layout
+  title={`${initialEvent.title} | Raveomat`}
+  description={eventDescription}
+  canonical={canonicalPath}
+  ogType="article"
+  ogImage={initialEvent.image_url ?? "/content/rave_poster.jpg"}
+  jsonLd={jsonLd}
+>
+  <EventCheckout id={id} initialEvent={initialEvent} client:load />
 </Layout>

@@ -3,9 +3,54 @@ export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
 import DashboardLayout from '../../components/dashboard/DashboardLayout.svelte';
 import TabEvents from '../../components/dashboard/TabEvents.svelte';
+import { createSupabaseServerClient } from '../../lib/supabase.server';
+import type { EventGenre, EventType, EventStatus } from '../../lib/types';
+
+const initialUser = Astro.locals.user
+  ? { id: Astro.locals.user.id, email: Astro.locals.user.email ?? "" }
+  : null;
+
+interface EventRow {
+  id: string;
+  title: string;
+  date: string;
+  venue: string;
+  price: number;
+  total_tickets: number;
+  sold_tickets: number;
+  genre: EventGenre;
+  type: EventType;
+  description: string;
+  image_url: string;
+  status: EventStatus;
+  organization_id: string;
+}
+
+let initialEvents: EventRow[] = [];
+
+if (Astro.locals.user) {
+  const supabase = createSupabaseServerClient(Astro.cookies);
+
+  const { data: orgData } = await supabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", Astro.locals.user.id);
+
+  const orgIds = (orgData || []).map((o: { organization_id: string }) => o.organization_id);
+
+  if (orgIds.length > 0) {
+    const { data: eventData } = await supabase
+      .from("events")
+      .select("*")
+      .in("organization_id", orgIds)
+      .order("date", { ascending: true });
+
+    initialEvents = (eventData || []) as EventRow[];
+  }
+}
 ---
 <Layout title="Raveomat | Zarządzanie Wydarzeniami">
-  <DashboardLayout activePath="/panel/wydarzenia" client:only="svelte">
-    <TabEvents client:only="svelte" />
+  <DashboardLayout activePath="/panel/wydarzenia" initialUser={initialUser} client:load>
+    <TabEvents initialEvents={initialEvents} client:load />
   </DashboardLayout>
 </Layout>

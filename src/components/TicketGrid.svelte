@@ -1,28 +1,20 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { supabase } from "../lib/supabase";
   import TicketCard from "./TicketCard.svelte";
   import type { TicketEvent, EventGenre, EventType, EventStatus } from "../lib/types";
-  import { DEFAULT_GENRE, DEFAULT_TYPE, DEFAULT_STATUS } from "../lib/types";
+  import { DEFAULT_STATUS } from "../lib/types";
   import Icon from "./Icon.svelte";
 
   type GenreFilter = "all" | EventGenre;
   type TypeFilter = "all" | EventType;
 
-  interface SupabaseRow {
-    id: string;
-    title: string;
-    date: string;
-    venue: string;
-    price: number;
-    status?: EventStatus;
-    genre?: EventGenre;
-    type?: EventType;
-    image_url?: string;
+  interface Props {
+    initialEvents?: TicketEvent[];
   }
 
-  let events = $state<TicketEvent[]>([]);
-  let isLoading = $state(true);
+  let { initialEvents = [] }: Props = $props();
+
+  let events = $state<TicketEvent[]>(initialEvents);
+  let isLoading = $state(initialEvents.length === 0);
   let errorMessage = $state("");
 
   let searchQuery = $state("");
@@ -44,33 +36,6 @@
   const technoEvents = $derived(events.filter((e) => e.genre === "techno" && e.type === "club").slice(0, 3));
   const festivalEvents = $derived(events.filter((e) => e.type === "festival").slice(0, 3));
   const hasActiveFilters = $derived(searchQuery.length > 0 || activeGenreFilter !== "all" || activeTypeFilter !== "all");
-
-  onMount(async () => {
-    try {
-      const { data, error } = await supabase.from("events").select("*");
-      if (error) {
-        errorMessage = error.message;
-        return;
-      }
-      if (data) {
-        events = (data as SupabaseRow[]).map((event) => ({
-          id: event.id,
-          title: event.title,
-          date: event.date,
-          venue: event.venue,
-          price: event.price,
-          status: event.status || DEFAULT_STATUS,
-          genre: event.genre || DEFAULT_GENRE,
-          type: event.type || DEFAULT_TYPE,
-          imageUrl: event.image_url,
-        }));
-      }
-    } catch (err) {
-      errorMessage = "Nie udało się połączyć z serwerem.";
-    } finally {
-      isLoading = false;
-    }
-  });
 
   function clearFilters() {
     searchQuery = "";
