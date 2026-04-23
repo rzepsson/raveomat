@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { supabase } from "../lib/supabase";
+  import { actions, isInputError } from "astro:actions";
+  import { HONEYPOT_FIELD_NAME } from "../lib/security/honeypot";
 
   let name = $state("");
   let email = $state("");
   let topic = $state("");
   let message = $state("");
+  let honeypot = $state("");
   let isSubmitting = $state(false);
   let errorMessage = $state("");
   let successMessage = $state("");
@@ -22,21 +24,35 @@
     isSubmitting = true;
 
     try {
-      const { error } = await supabase
-        .from("contact_messages")
-        .insert({
-          name: name.trim(),
-          email: email.trim(),
-          topic: topic.trim(),
-          message: message.trim(),
-        });
+      const result = await actions.submitContact({
+        name: name.trim(),
+        email: email.trim(),
+        topic: topic.trim(),
+        message: message.trim(),
+        honeypot,
+      });
 
-      if (error) {
+      if (result.error) {
+        if (isInputError(result.error)) {
+          errorMessage =
+            result.error.fields.message?.[0] ||
+            result.error.fields.topic?.[0] ||
+            result.error.fields.email?.[0] ||
+            result.error.fields.name?.[0] ||
+            "Dane formularza są niepoprawne.";
+          return;
+        }
+
+        if (result.error.code === "TOO_MANY_REQUESTS") {
+          errorMessage = result.error.message;
+          return;
+        }
+
         errorMessage = "Wystąpił błąd. Spróbuj ponownie.";
         return;
       }
 
-      successMessage = "Wiadomość wysłana! Odpowiemy najszybciej jak to możliwe.";
+      successMessage = result.data.message;
       name = "";
       email = "";
       topic = "";
@@ -64,7 +80,18 @@
     {/if}
 
     <form onsubmit={handleSubmit} class="space-y-12">
-      
+      <div class="absolute -left-2500 top-auto w-px h-px overflow-hidden" aria-hidden="true">
+        <label for="contact-honeypot">Pole techniczne</label>
+        <input
+          type="text"
+          id="contact-honeypot"
+          name={HONEYPOT_FIELD_NAME}
+          bind:value={honeypot}
+          tabindex="-1"
+          autocomplete="off"
+        />
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div class="relative group">
           <input

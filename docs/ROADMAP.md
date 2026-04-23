@@ -1,3 +1,27 @@
+## Implementation Update - 2026-04-23 (Actions & Anti-Abuse)
+
+### Done in this iteration
+
+1. Public forms moved to Astro Actions with modular structure.
+  - Added: src/actions/contact.ts, src/actions/newsletter.ts, src/actions/shared.ts
+  - Kept entrypoint as thin orchestrator: src/actions/index.ts
+
+2. Server-side validation contract enforced with Zod.
+  - Newsletter and contact payloads are now validated in actions before database writes.
+
+3. Honeypot protection added on both public forms.
+  - Client: hidden technical field added in src/components/ContactForm.svelte and src/components/NewsletterForm.svelte
+  - Server: honeypot guard added in src/actions/shared.ts and enforced in action handlers
+
+4. Anti-abuse layer prepared for production rollout.
+  - Current limiter backend: in-memory fixed window (per-IP and per-email)
+  - Added config module for future distributed backend: src/lib/security/rate-limit.config.ts
+  - Env contract added in src/env.d.ts: RATE_LIMIT_DRIVER, UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
+
+### Next anti-abuse milestone
+
+1. Replace in-memory limiter with Redis/KV backend before scale-out.
+
 ## Implementation Update - 2026-04-23
 
 ### Done in this iteration
@@ -41,6 +65,9 @@
 
 2. Background video optimization (phase 2)
   - Tune CRF/encoding presets with visual QA to target stable quality at minimal size across devices.
+
+3. Distributed rate limiting backend (Redis)
+  - Replace in-memory limiter with shared Redis/KV storage before production scale-out.
 
 #### Medium
 

@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { supabase } from "../lib/supabase";
+  import { actions, isInputError } from "astro:actions";
+  import { HONEYPOT_FIELD_NAME } from "../lib/security/honeypot";
 
   let email = $state("");
+  let honeypot = $state("");
   let isSubmitting = $state(false);
   let errorMessage = $state("");
   let successMessage = $state("");
@@ -19,20 +21,27 @@
     isSubmitting = true;
 
     try {
-      const { error } = await supabase
-        .from("newsletter_subscribers")
-        .insert({ email: email.trim() });
+      const result = await actions.submitNewsletter({
+        email: email.trim(),
+        honeypot,
+      });
 
-      if (error) {
-        if (error.code === "23505") {
-          errorMessage = "Ten adres email jest już zapisany.";
-        } else {
-          errorMessage = "Wystąpił błąd. Spróbuj ponownie.";
+      if (result.error) {
+        if (isInputError(result.error)) {
+          errorMessage = result.error.fields.email?.[0] || "Podaj poprawny adres email.";
+          return;
         }
+
+        if (result.error.code === "CONFLICT" || result.error.code === "TOO_MANY_REQUESTS") {
+          errorMessage = result.error.message;
+          return;
+        }
+
+        errorMessage = "Wystąpił błąd. Spróbuj ponownie.";
         return;
       }
 
-      successMessage = "Zapisano! Będziemy Ci informować o nowych wydarzeniach.";
+      successMessage = result.data.message;
       email = "";
     } catch {
       errorMessage = "Nie udało się połączyć z serwerem.";
@@ -49,6 +58,17 @@
     </div>
   {:else}
     <form onsubmit={handleSubmit} class="flex flex-col gap-4">
+      <div class="absolute -left-2500 top-auto w-px h-px overflow-hidden" aria-hidden="true">
+        <label for="newsletter-honeypot">Pole techniczne</label>
+        <input
+          type="text"
+          id="newsletter-honeypot"
+          name={HONEYPOT_FIELD_NAME}
+          bind:value={honeypot}
+          tabindex="-1"
+          autocomplete="off"
+        />
+      </div>
       <div class="relative">
         <label for="newsletter-email" class="sr-only">Adres email</label>
         <input
