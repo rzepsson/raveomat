@@ -1,5 +1,6 @@
 <script lang="ts">
   import TicketCard from "./TicketCard.svelte";
+  import Select from "./Select.svelte";
   import type { TicketEvent, EventGenre, EventType, EventStatus } from "../lib/types";
   import { DEFAULT_STATUS } from "../lib/types";
   import Icon from "./Icon.svelte";
@@ -13,13 +14,28 @@
 
   let { initialEvents = [] }: Props = $props();
 
-  let events = $state<TicketEvent[]>(initialEvents);
-  let isLoading = $state(initialEvents.length === 0);
+  const events = $derived(initialEvents);
+  const isLoading = $derived(initialEvents.length === 0);
   let errorMessage = $state("");
 
   let searchQuery = $state("");
   let activeGenreFilter: GenreFilter = $state("all");
   let activeTypeFilter: TypeFilter = $state("all");
+
+  const genreFilterOptions = [
+    { value: "all", label: "Wszystkie gatunki" },
+    { value: "techno", label: "Techno" },
+    { value: "house", label: "House" },
+    { value: "dnb", label: "Drum & Bass" },
+    { value: "trance", label: "Trance" },
+  ];
+
+  const typeFilterOptions = [
+    { value: "all", label: "Każdy format" },
+    { value: "club", label: "Klubowe" },
+    { value: "festival", label: "Festiwal" },
+    { value: "outdoor", label: "Plener" },
+  ];
 
   const filteredEvents = $derived.by(() => {
     return events.filter((event) => {
@@ -69,33 +85,26 @@
 
       <div class="hidden md:block w-px h-8 bg-white/10 self-center"></div>
 
-      <div class="relative min-w-50">
-        <select 
+      <div class="min-w-50">
+        <Select
           bind:value={activeGenreFilter}
-          class="w-full appearance-none bg-transparent py-4 pl-6 pr-12 text-foreground outline-none cursor-pointer font-medium"
-        >
-          <option value="all" class="bg-dark text-foreground">Wszystkie gatunki</option>
-          <option value="techno" class="bg-dark text-foreground">Techno</option>
-          <option value="house" class="bg-dark text-foreground">House</option>
-          <option value="dnb" class="bg-dark text-foreground">Drum & Bass</option>
-          <option value="trance" class="bg-dark text-foreground">Trance</option>
-        </select>
-        <Icon name="chevron-down" size={5} class="absolute right-5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+          options={genreFilterOptions}
+          ariaLabel="Filtruj według gatunku"
+          placeholder="Wszystkie gatunki"
+          class="min-w-50"
+        />
       </div>
 
       <div class="hidden md:block w-px h-8 bg-white/10 self-center"></div>
 
-      <div class="relative min-w-50">
-        <select 
+      <div class="min-w-50">
+        <Select
           bind:value={activeTypeFilter}
-          class="w-full appearance-none bg-transparent py-4 pl-6 pr-12 text-foreground outline-none cursor-pointer font-medium"
-        >
-          <option value="all" class="bg-dark text-foreground">Każdy format</option>
-          <option value="club" class="bg-dark text-foreground">Klubowe</option>
-          <option value="festival" class="bg-dark text-foreground">Festiwal</option>
-          <option value="outdoor" class="bg-dark text-foreground">Plener</option>
-        </select>
-        <Icon name="chevron-down" size={5} class="absolute right-5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+          options={typeFilterOptions}
+          ariaLabel="Filtruj według formatu wydarzenia"
+          placeholder="Każdy format"
+          class="min-w-50"
+        />
       </div>
     </div>
 
