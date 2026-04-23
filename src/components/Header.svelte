@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { User } from "@supabase/supabase-js";
-  import { authUser, authIsLoading, authModalOpen, initializeAuth, startAuthStateListener, signOut } from "../lib/authStore";
+  import { authIsLoading, authModalOpen, authSession, authUser, initializeAuth, startAuthStateListener, signOut, userOrganizations } from "../lib/authStore";
   import AuthModal from "./AuthModal.svelte";
   import Icon from "./Icon.svelte";
 
@@ -18,7 +18,7 @@
   let { showLogo = false, initialUser = null }: Props = $props();
 
   let user = $state<User | null>(null);
-  let isLoading = $state(initialUser === null);
+  let isLoading = $state(true);
   let isModalOpen = $state(false);
   let isMobileMenuOpen = $state(false);
 
@@ -58,8 +58,16 @@
   }
 
   async function handleSignOut() {
-    await signOut();
-    window.location.href = "/";
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      await signOut();
+      authSession.set(null);
+      authUser.set(null);
+      userOrganizations.set([]);
+      authIsLoading.set(false);
+      window.location.href = "/";
+    }
   }
 
   function toggleMobileMenu() {

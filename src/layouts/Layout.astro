@@ -77,7 +77,7 @@ const initialUser = Astro.locals.user
     <ClientRouter />
   </head>
   <body class="min-h-screen bg-dark">
-    <Header showLogo={true} initialUser={initialUser} client:idle />
+    <Header showLogo={true} initialUser={initialUser} client:load />
     <slot />
   </body>
 </html>

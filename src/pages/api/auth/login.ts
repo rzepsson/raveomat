@@ -7,11 +7,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(JSON.stringify({ error: "Email i hasło są wymagane." }), { status: 400 });
   }
 
-  const { error } = await locals.supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await locals.supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 401 });
   }
 
-  return new Response(JSON.stringify({ success: true }), { status: 200 });
+  return new Response(
+    JSON.stringify({
+      success: true,
+      user: data.user,
+      session: data.session,
+    }),
+    { status: 200 }
+  );
 };

@@ -2,7 +2,7 @@
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { onMount } from "svelte";
-  import { authModalOpen, closeAuthModal } from "../lib/authStore";
+  import { authIsLoading, authModalOpen, authSession, authUser, closeAuthModal, loadUserOrganizations } from "../lib/authStore";
   import { supabase } from "../lib/supabase";
   import type { OAuthProvider } from "../lib/types";
   import Icon from "./Icon.svelte";
@@ -62,8 +62,22 @@
         throw new Error(data.error || "Wystąpił błąd. Spróbuj ponownie.");
       }
 
+      if (!data.session || !data.user) {
+        throw new Error("Brak danych sesji po zalogowaniu.");
+      }
+
+      await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+
+      authSession.set(data.session);
+      authUser.set(data.user);
+      authIsLoading.set(false);
+
+      await loadUserOrganizations(data.user.id);
+
       closeAuthModal();
-      window.location.reload();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Wystąpił błąd. Spróbuj ponownie.";
       errorMessage = message;
