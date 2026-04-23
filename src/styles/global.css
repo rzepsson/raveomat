@@ -1,20 +1,7 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: 'Syne';
-  src: url('/fonts/Syne-ExtraBold.ttf') format('truetype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Inter';
-  src: url('/fonts/Inter-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+@import "@fontsource/inter/400.css";
+@import "@fontsource/syne/800.css";
 
 @theme {
   --color-dark: #0a0a0c;
