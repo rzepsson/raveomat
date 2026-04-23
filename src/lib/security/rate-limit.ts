@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { getRateLimitConfig, isRedisConfigured } from "./rate-limit.config";
+import { checkRedisRateLimit } from "./redis-rate-limit";
 
 interface RateLimitOptions {
   maxRequests: number;
@@ -32,7 +33,6 @@ globalThis.__raveomatRateLimitStore = store;
 const rateLimitConfig = getRateLimitConfig();
 
 if (rateLimitConfig.driver === "redis" && !isRedisConfigured(rateLimitConfig)) {
-  // Keep startup resilient in non-prod environments.
   console.warn("RATE_LIMIT_DRIVER=redis set, but Redis credentials are missing. Falling back to in-memory store.");
 }
 
@@ -55,7 +55,9 @@ export function hashIdentifier(rawValue: string): string {
   return createHash("sha256").update(rawValue).digest("hex").slice(0, 24);
 }
 
-export function checkRateLimit(
+export type { RateLimitDecision };
+
+function checkMemoryRateLimit(
   bucket: string,
   identity: string,
   options: RateLimitOptions
@@ -95,6 +97,20 @@ export function checkRateLimit(
     remaining: Math.max(0, options.maxRequests - currentEntry.count),
     retryAfterSeconds: 0,
   };
+}
+
+export async function checkRateLimit(
+  bucket: string,
+  identity: string,
+  options: RateLimitOptions
+): Promise<RateLimitDecision> {
+  if (rateLimitConfig.driver === "redis" && isRedisConfigured(rateLimitConfig)) {
+    const key = `${bucket}:${identity}`;
+    const redisDecision = await checkRedisRateLimit(key, options.maxRequests, options.windowMs);
+    if (redisDecision) return redisDecision;
+  }
+
+  return checkMemoryRateLimit(bucket, identity, options);
 }
 
 export function getClientIp(headers: Headers, fallbackAddress?: string): string {

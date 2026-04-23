@@ -74,7 +74,7 @@
 {:else}
   <div class="bg-white/5 border border-white/10 p-8 sm:p-12">
     {#if errorMessage}
-      <div class="mb-8 p-4 bg-accent/10 border border-accent/20 text-accent text-sm font-medium" role="alert">
+      <div class="mb-8 p-4 bg-accent/10 border border-accent/20 text-accent text-sm font-medium" role="alert" aria-live="polite">
         {errorMessage}
       </div>
     {/if}

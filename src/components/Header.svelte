@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { actions } from "astro:actions";
   import type { User } from "@supabase/supabase-js";
-  import { authIsLoading, authModalOpen, authSession, authUser, initializeAuth, startAuthStateListener, signOut, userOrganizations } from "../lib/authStore";
+  import { authIsLoading, authModalOpen, authSession, authUser, initializeAuth, startAuthStateListener, userOrganizations } from "../lib/authStore";
   import AuthModal from "./AuthModal.svelte";
   import Icon from "./Icon.svelte";
 
@@ -59,9 +60,10 @@
 
   async function handleSignOut() {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await actions.logout({});
+    } catch {
+      // Server logout best-effort; clear client state regardless
     } finally {
-      await signOut();
       authSession.set(null);
       authUser.set(null);
       userOrganizations.set([]);
@@ -87,7 +89,7 @@
         {#if showLogo}
           <a 
             href="/" 
-            class="font-display text-1xl md:text-2xl font-extrabold tracking-tighter text-primary uppercase hover:opacity-80 transition-opacity"
+            class="font-display text-xl md:text-2xl font-extrabold tracking-tighter text-primary uppercase hover:opacity-80 transition-opacity"
           >
             RAVEOMAT
           </a>

@@ -1,11 +1,14 @@
 <script lang="ts">
-  import { supabase } from "../lib/supabase";
+  import { actions, isInputError } from "astro:actions";
+  import { supabaseBrowser } from "../lib/supabase.browser";
+  import { HONEYPOT_FIELD_NAME } from "../lib/security/honeypot";
   import type { OAuthProvider } from "../lib/types";
   import Icon from "./Icon.svelte";
 
   let fullName = $state("");
   let email = $state("");
   let password = $state("");
+  let honeypot = $state("");
   let acceptTerms = $state(false);
   let isSubmitting = $state(false);
   let errorMessage = $state("");
@@ -24,26 +27,35 @@
     isSubmitting = true;
 
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, fullName }),
+      const result = await actions.register({
+        email: email.trim(),
+        password,
+        fullName: fullName.trim(),
+        honeypot,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Wystąpił błąd. Spróbuj ponownie.");
+      if (result.error) {
+        if (isInputError(result.error)) {
+          errorMessage =
+            result.error.fields.email?.[0]
+            || result.error.fields.password?.[0]
+            || result.error.fields.fullName?.[0]
+            || "Dane formularza są niepoprawne.";
+        } else if (result.error.code === "TOO_MANY_REQUESTS") {
+          errorMessage = result.error.message;
+        } else {
+          errorMessage = result.error.message || "Wystąpił błąd. Spróbuj ponownie.";
+        }
+        return;
       }
 
-      successMessage = "Sprawdź skrzynkę email, aby potwierdzić rejestrację.";
+      successMessage = result.data.message;
       fullName = "";
       email = "";
       password = "";
       acceptTerms = false;
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Wystąpił błąd. Spróbuj ponownie.";
-      errorMessage = message;
+    } catch {
+      errorMessage = "Nie udało się połączyć z serwerem.";
     } finally {
       isSubmitting = false;
     }
@@ -54,7 +66,7 @@
     successMessage = "";
     isSubmitting = true;
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${window.location.origin}/api/auth/callback`,
@@ -120,6 +132,17 @@
     </div>
 
     <form onsubmit={handleSubmit} class="space-y-4">
+      <div class="absolute -left-2500 top-auto w-px h-px overflow-hidden" aria-hidden="true">
+        <label for="register-honeypot">Pole techniczne</label>
+        <input
+          type="text"
+          id="register-honeypot"
+          name={HONEYPOT_FIELD_NAME}
+          bind:value={honeypot}
+          tabindex="-1"
+          autocomplete="off"
+        />
+      </div>
       <div>
         <label for="register-name" class="block text-[11px] font-bold text-muted uppercase tracking-widest mb-2 ml-1">
           Imię i Nazwisko

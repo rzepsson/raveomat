@@ -11,6 +11,16 @@ function isUnsplashUrl(url: string): boolean {
   return url.includes("unsplash.com");
 }
 
+function isSupabaseStorageUrl(url: string): boolean {
+  return url.includes("supabase.co/storage/");
+}
+
+function optimizeSupabaseImageUrl(url: string, width: number): string {
+  const pathParts = url.split("/storage/v1/object/public/");
+  if (pathParts.length < 2) return url;
+  return `${pathParts[0]}/storage/v1/render/image/public/${pathParts[1]}?width=${width}`;
+}
+
 export function optimizeImageUrl(
   url: string | undefined,
   options: ImageOptions = {}
@@ -21,6 +31,9 @@ export function optimizeImageUrl(
     const separator = url.includes("?") ? "&" : "?";
     return `${url}${separator}auto=format&fm=webp&fit=crop&w=${width}&q=${quality}`;
   }
+  if (isSupabaseStorageUrl(url)) {
+    return optimizeSupabaseImageUrl(url, width);
+  }
   return url;
 }
 
@@ -29,14 +42,17 @@ export function buildImageSrcSet(
   options: SrcSetOptions = {}
 ): string {
   if (!url) return "";
-  if (!isUnsplashUrl(url)) return "";
 
   const { widths = [320, 480, 640, 960, 1200], quality = 70 } = options;
   const uniqueSortedWidths = [...new Set(widths)].sort((a, b) => a - b);
 
-  return uniqueSortedWidths
-    .map((width) => `${optimizeImageUrl(url, { width, quality })} ${width}w`)
-    .join(", ");
+  if (isUnsplashUrl(url) || isSupabaseStorageUrl(url)) {
+    return uniqueSortedWidths
+      .map((width) => `${optimizeImageUrl(url, { width, quality })} ${width}w`)
+      .join(", ");
+  }
+
+  return "";
 }
 
 export function formatDate(

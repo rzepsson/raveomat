@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { supabase } from "../../lib/supabase";
+  import { supabaseBrowser } from "../../lib/supabase.browser";
   import Icon from "../Icon.svelte";
 
   let inviteCode = $state("");
@@ -18,7 +18,7 @@
     successMessage = "";
 
     try {
-      const { error } = await supabase.rpc("join_organization_by_code", {
+      const { error } = await supabaseBrowser.rpc("join_organization_by_code", {
         p_invite_code: inviteCode.trim(),
       });
 

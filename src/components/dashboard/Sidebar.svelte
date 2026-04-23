@@ -19,18 +19,18 @@
   }
 
   const userTabs: TabItem[] = [
-    { id: "tickets", label: "Moje Bilety", href: "/panel/bilety" },
-    { id: "settings", label: "Ustawienia Konta", href: "/panel/ustawienia" },
+    { id: "bilety", label: "Moje Bilety", href: "/panel/bilety" },
+    { id: "ustawienia", label: "Ustawienia Konta", href: "/panel/ustawienia" },
   ];
 
   const promoterTabs: TabItem[] = (() => {
     return isPromoter
       ? [
-          { id: "organization", label: "Twoja Organizacja", href: "/panel/organizacja" },
-          { id: "events", label: "Wydarzenia", href: "/panel/wydarzenia" },
-          { id: "scanner", label: "Skaner Biletów", href: "/panel/skaner" },
+          { id: "organizacja", label: "Twoja Organizacja", href: "/panel/organizacja" },
+          { id: "wydarzenia", label: "Wydarzenia", href: "/panel/wydarzenia" },
+          { id: "skaner", label: "Skaner Biletów", href: "/panel/skaner" },
         ]
-      : [{ id: "promoter", label: "Zostań Promotorem", href: "/panel/promotor", locked: true }];
+      : [{ id: "promotor", label: "Zostań Promotorem", href: "/panel/promotor", locked: true }];
   })();
 </script>
 

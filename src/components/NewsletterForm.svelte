@@ -83,7 +83,7 @@
         />
       </div>
       {#if errorMessage}
-        <p class="text-accent text-xs font-bold uppercase tracking-wider" role="alert">{errorMessage}</p>
+        <p class="text-accent text-xs font-bold uppercase tracking-wider" role="alert" aria-live="polite">{errorMessage}</p>
       {/if}
       <button
         type="submit"

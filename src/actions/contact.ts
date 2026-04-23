@@ -25,12 +25,12 @@ export const submitContact = defineAction({
 
     const clientIp = getSafeClientAddress(context.request, context.clientAddress);
 
-    enforceRateLimit("contact:ip", getHashedIdentity(clientIp), {
+    await enforceRateLimit("contact:ip", getHashedIdentity(clientIp), {
       maxRequests: 5,
       windowMs: 15 * 60_000,
     });
 
-    enforceRateLimit("contact:email", getHashedIdentity(input.email), {
+    await enforceRateLimit("contact:email", getHashedIdentity(input.email), {
       maxRequests: 4,
       windowMs: 60 * 60_000,
     });

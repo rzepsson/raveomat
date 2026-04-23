@@ -2,13 +2,16 @@
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { onMount } from "svelte";
-  import { authIsLoading, authModalOpen, authSession, authUser, closeAuthModal, loadUserOrganizations } from "../lib/authStore";
-  import { supabase } from "../lib/supabase";
+  import { actions, isInputError } from "astro:actions";
+  import { authIsLoading, authModalOpen, authUser, closeAuthModal, loadUserOrganizations } from "../lib/authStore";
+  import { supabaseBrowser } from "../lib/supabase.browser";
+  import { HONEYPOT_FIELD_NAME } from "../lib/security/honeypot";
   import type { OAuthProvider } from "../lib/types";
   import Icon from "./Icon.svelte";
 
   let email = $state("");
   let password = $state("");
+  let honeypot = $state("");
   let isSubmitting = $state(false);
   let errorMessage = $state("");
   let isOpen = $state(false);
@@ -50,37 +53,33 @@
     isSubmitting = true;
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const result = await actions.login({
+        email: email.trim(),
+        password,
+        honeypot,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Wystąpił błąd. Spróbuj ponownie.");
+      if (result.error) {
+        if (isInputError(result.error)) {
+          errorMessage = result.error.fields.email?.[0]
+            || result.error.fields.password?.[0]
+            || "Dane logowania są niepoprawne.";
+        } else if (result.error.code === "TOO_MANY_REQUESTS") {
+          errorMessage = result.error.message;
+        } else {
+          errorMessage = result.error.message || "Wystąpił błąd. Spróbuj ponownie.";
+        }
+        return;
       }
 
-      if (!data.session || !data.user) {
-        throw new Error("Brak danych sesji po zalogowaniu.");
-      }
-
-      await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-      });
-
-      authSession.set(data.session);
-      authUser.set(data.user);
+      authUser.set(result.data.user as any);
       authIsLoading.set(false);
 
-      await loadUserOrganizations(data.user.id);
+      await loadUserOrganizations(result.data.user.id);
 
       closeAuthModal();
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Wystąpił błąd. Spróbuj ponownie.";
-      errorMessage = message;
+    } catch {
+      errorMessage = "Nie udało się połączyć z serwerem.";
     } finally {
       isSubmitting = false;
     }
@@ -90,14 +89,14 @@
     errorMessage = "";
     isSubmitting = true;
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${window.location.origin}/api/auth/callback`,
         },
       });
       if (error) throw error;
-    } catch (err: unknown) {
+    } catch {
       errorMessage = `Błąd logowania przez ${provider}.`;
       isSubmitting = false;
     }
@@ -216,6 +215,17 @@
       </div>
 
       <form onsubmit={handleSubmit} class="space-y-4">
+        <div class="absolute -left-2500 top-auto w-px h-px overflow-hidden" aria-hidden="true">
+          <label for="auth-honeypot">Pole techniczne</label>
+          <input
+            type="text"
+            id="auth-honeypot"
+            name={HONEYPOT_FIELD_NAME}
+            bind:value={honeypot}
+            tabindex="-1"
+            autocomplete="off"
+          />
+        </div>
         <div>
           <label for="auth-email" class="block text-[11px] font-bold text-muted uppercase tracking-widest mb-2 ml-1">
             Adres Email

@@ -6,12 +6,12 @@ export const emailSchema = z.string().trim().toLowerCase().max(254).pipe(z.email
 
 export const honeypotSchema = z.string().trim().max(0).optional().default("");
 
-export function enforceRateLimit(
+export async function enforceRateLimit(
   bucket: string,
   identity: string,
   options: { maxRequests: number; windowMs: number }
-): void {
-  const decision = checkRateLimit(bucket, identity, options);
+): Promise<void> {
+  const decision = await checkRateLimit(bucket, identity, options);
 
   if (!decision.allowed) {
     throw new ActionError({
@@ -32,7 +32,6 @@ export function getHashedIdentity(rawValue: string): string {
 export function guardHoneypot(honeypotValue: string): void {
   if (!honeypotValue.trim()) return;
 
-  // Return an authorization-like error to avoid exposing anti-bot rules.
   throw new ActionError({
     code: "FORBIDDEN",
     message: "Nie udało się przetworzyć żądania.",

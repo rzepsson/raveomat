@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { supabase } from "../../lib/supabase";
+  import { supabaseBrowser } from "../../lib/supabase.browser";
   import { userOrganizations } from "../../lib/authStore";
   import type { OrganizationMembership } from "../../lib/authStore";
   import type { EventGenre, EventType, EventStatus, ManagedEvent } from "../../lib/types";
@@ -98,7 +98,7 @@
     isLoading = true;
     errorMessage = "";
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseBrowser
       .from("events")
       .select("*")
       .eq("organization_id", activeOrganizationId)
@@ -325,7 +325,7 @@
   }
 
   async function uploadImageToStorage(blob: Blob, fileName: string): Promise<string | null> {
-    const { error } = await supabase.storage
+    const { error } = await supabaseBrowser.storage
       .from("event-posters")
       .upload(fileName, blob, {
         contentType: "image/jpeg",
@@ -337,7 +337,7 @@
       return null;
     }
 
-    const { data: urlData } = supabase.storage
+    const { data: urlData } = supabaseBrowser.storage
       .from("event-posters")
       .getPublicUrl(fileName);
 
@@ -405,7 +405,7 @@
     };
 
     if (selectedEvent) {
-      const { error } = await supabase
+      const { error } = await supabaseBrowser
         .from("events")
         .update(eventPayload)
         .eq("id", selectedEvent.id);
@@ -416,7 +416,7 @@
         return;
       }
     } else {
-      const { error } = await supabase.from("events").insert(eventPayload);
+      const { error } = await supabaseBrowser.from("events").insert(eventPayload);
 
       if (error) {
         formError = "Błąd tworzenia: " + error.message;

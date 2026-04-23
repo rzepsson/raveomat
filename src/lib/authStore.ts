@@ -1,5 +1,5 @@
 import { atom } from "nanostores";
-import { supabase } from "./supabase";
+import { supabaseBrowser } from "./supabase.browser";
 import type { User, Session } from "@supabase/supabase-js";
 
 export const authUser = atom<User | null>(null);
@@ -48,7 +48,7 @@ interface OrgRow {
 }
 
 export async function loadUserOrganizations(userId: string): Promise<void> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseBrowser
     .from("organization_members")
     .select(`
       role,
@@ -83,7 +83,7 @@ export async function initializeAuth(): Promise<void> {
   isInitialized = true;
 
   try {
-    const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await supabaseBrowser.auth.getSession();
 
     if (error) {
       console.error("Failed to get session:", error);
@@ -108,7 +108,7 @@ export async function initializeAuth(): Promise<void> {
 export function startAuthStateListener(): void {
   if (authSubscription) return;
 
-  const { data } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+  const { data } = supabaseBrowser.auth.onAuthStateChange(handleAuthStateChange);
   authSubscription = data.subscription;
 }
 
@@ -118,10 +118,6 @@ export function openAuthModal(): void {
 
 export function closeAuthModal(): void {
   authModalOpen.set(false);
-}
-
-export async function signOut(): Promise<void> {
-  await supabase.auth.signOut();
 }
 
 export function cleanupAuth(): void {

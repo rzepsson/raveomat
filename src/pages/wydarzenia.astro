@@ -18,19 +18,33 @@ interface EventRow {
   image_url?: string;
 }
 
-const { data } = await supabase.from("events").select("*");
+let initialEvents: { id: string; title: string; date: string; venue: string; price: number; status: EventStatus; genre: EventGenre; type: EventType; imageUrl?: string }[] = [];
 
-const initialEvents = ((data || []) as EventRow[]).map((event) => ({
-  id: event.id,
-  title: event.title,
-  date: event.date,
-  venue: event.venue,
-  price: event.price,
-  status: event.status || "available",
-  genre: event.genre || "techno",
-  type: event.type || "club",
-  imageUrl: event.image_url,
-}));
+try {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .gte("date", new Date().toISOString())
+    .order("date", { ascending: true });
+
+  if (error) {
+    console.error("Failed to fetch events:", error.message);
+  } else {
+    initialEvents = ((data || []) as EventRow[]).map((event) => ({
+      id: event.id,
+      title: event.title,
+      date: event.date,
+      venue: event.venue,
+      price: event.price,
+      status: event.status || ("available" as EventStatus),
+      genre: event.genre || ("techno" as EventGenre),
+      type: event.type || ("club" as EventType),
+      imageUrl: event.image_url,
+    }));
+  }
+} catch (err) {
+  console.error("Supabase connection error:", err);
+}
 ---
 
 <Layout

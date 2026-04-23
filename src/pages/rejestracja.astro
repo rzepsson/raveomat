@@ -17,9 +17,11 @@ import RegisterForm from "../components/RegisterForm.svelte";
         muted
         loop
         playsinline
+        preload="metadata"
         class="w-full h-full object-cover"
       >
-        <source src="/rave_video.mp4" type="video/mp4" />
+        <source src="/content/rave_video_720.webm" type="video/webm" />
+        <source src="/content/rave_video_720.mp4" type="video/mp4" />
       </video>
       <div class="absolute inset-0 bg-dark/80 backdrop-blur-2xl"></div>
     </div>

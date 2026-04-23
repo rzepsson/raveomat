@@ -34,7 +34,16 @@
 
   let { name, class: className = "", size = 5 }: Props = $props();
 
-  const sizeClass = $derived(`w-${size} h-${size}`);
+  const SIZE_MAP: Record<number, string> = {
+    4: "w-4 h-4",
+    5: "w-5 h-5",
+    6: "w-6 h-6",
+    10: "w-10 h-10",
+    12: "w-12 h-12",
+    16: "w-16 h-16",
+  };
+
+  const sizeClass = $derived(SIZE_MAP[size] ?? `w-5 h-5`);
 </script>
 
 <svg

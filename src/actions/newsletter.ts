@@ -22,12 +22,12 @@ export const submitNewsletter = defineAction({
 
     const clientIp = getSafeClientAddress(context.request, context.clientAddress);
 
-    enforceRateLimit("newsletter:ip", getHashedIdentity(clientIp), {
+    await enforceRateLimit("newsletter:ip", getHashedIdentity(clientIp), {
       maxRequests: 8,
       windowMs: 15 * 60_000,
     });
 
-    enforceRateLimit("newsletter:email", getHashedIdentity(input.email), {
+    await enforceRateLimit("newsletter:email", getHashedIdentity(input.email), {
       maxRequests: 3,
       windowMs: 60 * 60_000,
     });

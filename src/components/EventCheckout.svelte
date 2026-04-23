@@ -62,7 +62,7 @@
     </div>
 
   {:else if errorMessage}
-    <div class="max-w-7xl mx-auto px-6 py-32 text-center border border-white/10 bg-white/5 mt-12">
+    <div class="max-w-7xl mx-auto px-6 py-32 text-center border border-white/10 bg-white/5 mt-12" role="alert" aria-live="polite">
       <h1 class="text-3xl font-display font-extrabold text-foreground mb-4 uppercase tracking-tighter">Błąd Operacji</h1>
       <p class="text-muted mb-8">{errorMessage}</p>
       <a href="/wydarzenia" class="inline-flex px-8 py-4 bg-primary text-dark font-bold text-xs uppercase tracking-widest hover:bg-white transition-colors">
