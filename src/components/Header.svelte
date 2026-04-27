@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { actions } from "astro:actions";
-  import type { User } from "@supabase/supabase-js";
-  import { authIsLoading, authModalOpen, authSession, authUser, initializeAuth, startAuthStateListener, userOrganizations } from "../lib/authStore";
+  import { authModalOpen, authUser, openAuthModal, userOrganizations } from "../lib/authStore";
+  import { supabaseBrowser } from "../lib/supabase.browser";
   import AuthModal from "./AuthModal.svelte";
   import Icon from "./Icon.svelte";
 
@@ -18,56 +18,76 @@
 
   let { showLogo = false, initialUser = null }: Props = $props();
 
-  let user = $state<User | null>(null);
-  let isLoading = $state(true);
+  let user = $state<InitialUser | null>(null);
   let isModalOpen = $state(false);
   let isMobileMenuOpen = $state(false);
 
   $effect(() => {
-    const unsubscribeUser = authUser.subscribe(value => {
-      user = value;
-    });
-    const unsubscribeLoading = authIsLoading.subscribe(value => {
-      isLoading = value;
-    });
-    const unsubscribeModal = authModalOpen.subscribe(value => {
-      isModalOpen = value;
+    if (initialUser) {
+      authUser.set(initialUser as any);
+    }
+  });
+
+  $effect(() => {
+    const unsubscribeUser = authUser.subscribe((value) => {
+      user = value ? { id: value.id, email: value.email ?? "" } : null;
     });
 
     return () => {
       unsubscribeUser();
-      unsubscribeLoading();
+    };
+  });
+
+  $effect(() => {
+    const unsubscribeModal = authModalOpen.subscribe((value) => {
+      isModalOpen = value;
+    });
+
+    return () => {
       unsubscribeModal();
     };
   });
 
-  onMount(async () => {
-    if (initialUser) {
-      authUser.set({ id: initialUser.id, email: initialUser.email } as User);
-      authIsLoading.set(false);
+  onMount(() => {
+    let mounted = true;
+
+    void supabaseBrowser.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      authUser.set(data.session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabaseBrowser.auth.onAuthStateChange((_event, session) => {
+      authUser.set(session?.user ?? null);
+      if (!session) {
+        userOrganizations.set([]);
+      }
+    });
+
+    if (window.location.search.includes("login=1")) {
+      openAuthModal();
+      window.history.replaceState({}, "", window.location.pathname);
     }
-    await initializeAuth();
-    startAuthStateListener();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   });
 
   function handleOpenAuth() {
     authModalOpen.set(true);
   }
 
-  function handleCloseAuth() {
-    authModalOpen.set(false);
-  }
-
   async function handleSignOut() {
     try {
       await actions.logout({});
     } catch {
-      // Server logout best-effort; clear client state regardless
+      // Server logout best-effort
     } finally {
-      authSession.set(null);
       authUser.set(null);
       userOrganizations.set([]);
-      authIsLoading.set(false);
       window.location.href = "/";
     }
   }
@@ -123,9 +143,7 @@
 
         <div class="hidden md:block w-px h-6 bg-white/10"></div>
 
-        {#if isLoading}
-          <div class="w-20 h-10 bg-white/5 rounded-full animate-pulse"></div>
-        {:else if user}
+        {#if user}
           <div class="flex items-center gap-4">
             <a
               href="/panel/bilety"

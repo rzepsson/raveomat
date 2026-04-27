@@ -1,0 +1,11 @@
+CREATE TYPE org_member_role AS ENUM ('owner', 'admin', 'member');
+CREATE TYPE org_type AS ENUM ('club', 'collective', 'festival_organizer', 'promoter', 'venue', 'other');
+CREATE TYPE org_status AS ENUM ('active', 'suspended', 'pending', 'archived');
+CREATE TYPE event_status AS ENUM ('draft', 'available', 'soldout', 'cancelled', 'completed');
+CREATE TYPE event_genre AS ENUM ('techno', 'house', 'dnb', 'trance', 'hard_techno', 'minimal', 'tech_house', 'other');
+CREATE TYPE event_type AS ENUM ('club', 'festival', 'outdoor', 'private', 'stream');
+CREATE TYPE promo_tier_enum AS ENUM ('none', 'basic', 'pro');
+CREATE TYPE ticket_status AS ENUM ('valid', 'used', 'cancelled', 'expired', 'refunded');
+CREATE TYPE order_status AS ENUM ('pending', 'completed', 'failed', 'refunded', 'partially_refunded');
+CREATE TYPE payment_method AS ENUM ('card', 'blik', 'transfer', 'google_pay', 'apple_pay');
+CREATE TYPE ticket_scan_result AS ENUM ('valid', 'already_used', 'invalid', 'wrong_event');

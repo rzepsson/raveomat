@@ -29,7 +29,12 @@
         <div class="absolute inset-0 bg-primary/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
         <div class="relative z-10">
           <div class="flex items-center justify-between mb-8">
-            <span class="px-3 py-1 bg-white/10 text-[10px] uppercase tracking-widest font-bold text-primary">Aktywny</span>
+            <div class="flex items-center gap-3">
+              <span class="px-3 py-1 bg-white/10 text-[10px] uppercase tracking-widest font-bold text-primary">{org.type}</span>
+              {#if org.city}
+                <span class="text-[10px] uppercase tracking-widest text-muted">{org.city}</span>
+              {/if}
+            </div>
             <span class="text-[10px] uppercase tracking-widest font-mono text-muted">ID: {org.organizationId.substring(0,8)}</span>
           </div>
           
@@ -40,9 +45,12 @@
               <span class="text-[10px] uppercase tracking-[0.2em] text-muted">Twoja Rola</span>
               <span class="font-bold text-sm text-foreground uppercase tracking-widest">{org.role}</span>
             </div>
-            <button title="Edytuj" class="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-white hover:text-dark transition-colors">
-              <Icon name="chevron-right" size={4} />
-            </button>
+            {#if org.inviteCode}
+              <div class="flex flex-col items-end">
+                <span class="text-[10px] uppercase tracking-[0.2em] text-muted">Kod Zaproszenia</span>
+                <span class="font-mono text-sm text-primary">{org.inviteCode}</span>
+              </div>
+            {/if}
           </div>
         </div>
       </div>

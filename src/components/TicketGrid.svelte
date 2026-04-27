@@ -25,9 +25,12 @@
   const genreFilterOptions = [
     { value: "all", label: "Wszystkie gatunki" },
     { value: "techno", label: "Techno" },
+    { value: "hard_techno", label: "Hard Techno" },
     { value: "house", label: "House" },
+    { value: "tech_house", label: "Tech House" },
     { value: "dnb", label: "Drum & Bass" },
     { value: "trance", label: "Trance" },
+    { value: "minimal", label: "Minimal" },
   ];
 
   const typeFilterOptions = [
@@ -35,6 +38,8 @@
     { value: "club", label: "Klubowe" },
     { value: "festival", label: "Festiwal" },
     { value: "outdoor", label: "Plener" },
+    { value: "private", label: "Prywatne" },
+    { value: "stream", label: "Stream" },
   ];
 
   const filteredEvents = $derived.by(() => {

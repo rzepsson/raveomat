@@ -2,18 +2,21 @@ import { createServerClient } from "@supabase/ssr";
 import type { AstroCookies } from "astro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-interface CookieOptions {
-  domain?: string;
-  expires?: Date;
-  httpOnly?: boolean;
-  maxAge?: number;
-  path?: string;
-  sameSite?: "lax" | "strict" | "none";
-  secure?: boolean;
-  [key: string]: unknown;
+function parseCookieHeader(header: string): Array<{ name: string; value: string }> {
+  if (!header) return [];
+  return header.split(";").map((pair) => {
+    const eqIndex = pair.indexOf("=");
+    const name = pair.substring(0, eqIndex).trim();
+    const value = pair.substring(eqIndex + 1).trim();
+    return { name, value };
+  });
 }
 
-export function createSupabaseServerClient(cookies: AstroCookies): SupabaseClient {
+export function createSupabaseServerClient(
+  cookies: AstroCookies,
+  rawCookieHeader?: string,
+  responseHeaders?: Map<string, string>,
+): SupabaseClient {
   const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL as string;
   const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
 
@@ -23,17 +26,29 @@ export function createSupabaseServerClient(cookies: AstroCookies): SupabaseClien
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      get(name: string) {
-        return cookies.get(name)?.value;
+      getAll() {
+        return parseCookieHeader(rawCookieHeader ?? "");
       },
-      set(name: string, value: string, options: CookieOptions) {
-        const { name: _name, ...cookieOpts } = options as CookieOptions & { name?: string };
-        cookies.set(name, value, cookieOpts);
-      },
-      remove(name: string, options: CookieOptions) {
-        const { name: _name, ...cookieOpts } = options as CookieOptions & { name?: string };
-        cookies.delete(name, cookieOpts);
+      setAll(
+        toSet: Array<{ name: string; value: string; options: Record<string, unknown> }>,
+        headers: Record<string, string>,
+      ) {
+        for (const { name, value, options } of toSet) {
+          const { name: _name, ...cookieOpts } = options as Record<string, unknown> & {
+            name?: string;
+          };
+          cookies.set(name, value, cookieOpts);
+        }
+        if (responseHeaders) {
+          for (const [key, val] of Object.entries(headers)) {
+            responseHeaders.set(key, val);
+          }
+        }
       },
     },
   });
+}
+
+export async function waitForCookieCommit(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
 }

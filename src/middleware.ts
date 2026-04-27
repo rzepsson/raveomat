@@ -72,13 +72,22 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return next();
   }
 
-  const supabase = createSupabaseServerClient(context.cookies);
+  const rawCookieHeader = context.request.headers.get("cookie") ?? "";
+  const authResponseHeaders = new Map<string, string>();
 
-  const {
-    data: { user, session },
-  } = await supabase.auth.getSession();
+  const supabase = createSupabaseServerClient(
+    context.cookies,
+    rawCookieHeader,
+    authResponseHeaders,
+  );
 
-  const currentUser = user && session ? user : null;
+  const [sessionResult, userResult] = await Promise.all([
+    supabase.auth.getSession(),
+    supabase.auth.getUser(),
+  ]);
+
+  const session = sessionResult.data.session ?? null;
+  const currentUser = userResult.data.user ?? session?.user ?? null;
 
   context.locals.supabase = supabase;
   context.locals.user = currentUser;
@@ -93,8 +102,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const cspHeader = buildCspHeader();
   response.headers.set("Content-Security-Policy", cspHeader);
   response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+
+  for (const [key, value] of authResponseHeaders) {
+    response.headers.set(key, value);
+  }
 
   const acceptEncoding = context.request.headers.get("accept-encoding") ?? "";
   response = await maybeCompress(response, acceptEncoding);

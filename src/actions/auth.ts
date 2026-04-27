@@ -8,6 +8,7 @@ import {
   guardHoneypot,
   honeypotSchema,
 } from "./shared";
+import { waitForCookieCommit } from "../lib/supabase.server";
 
 const loginSchema = z.object({
   email: emailSchema,
@@ -51,6 +52,8 @@ export const login = defineAction({
         message: "Nieprawidłowy email lub hasło.",
       });
     }
+
+    await waitForCookieCommit();
 
     return {
       success: true,
@@ -108,6 +111,8 @@ export const logout = defineAction({
         message: "Wystąpił błąd podczas wylogowywania.",
       });
     }
+
+    await waitForCookieCommit();
 
     return { success: true };
   },

@@ -29,7 +29,9 @@ export function buildCspHeader(): string {
       name: "connect-src",
       values: ["'self'", supabaseOrigin].filter(Boolean),
     },
-    { name: "frame-src", values: ["'none'"] },
+    // Astro client-side navigation can rely on same-origin framing internals.
+    { name: "frame-src", values: ["'self'"] },
+    { name: "frame-ancestors", values: ["'self'"] },
     { name: "object-src", values: ["'none'"] },
     { name: "media-src", values: ["'self'"] },
     { name: "base-uri", values: ["'self'"] },

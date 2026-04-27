@@ -1,9 +1,11 @@
 <script lang="ts">
   import type { User } from "@supabase/supabase-js";
-  import { authUser } from "../../lib/authStore";
+  import { authUser, authProfile } from "../../lib/authStore";
+  import type { Profile } from "../../lib/types";
   import Icon from "../Icon.svelte";
 
   let currentUser: User | null = $state(null);
+  let profile: Profile | null = $state(null);
 
   $effect(() => {
     const unsub = authUser.subscribe((value) => {
@@ -11,6 +13,17 @@
     });
     return unsub;
   });
+
+  $effect(() => {
+    const unsub = authProfile.subscribe((value) => {
+      profile = value;
+    });
+    return unsub;
+  });
+
+  const displayName = $derived(
+    profile?.full_name || currentUser?.user_metadata?.full_name || "—"
+  );
 </script>
 
 <div class="grid lg:grid-cols-2 gap-8">
@@ -22,16 +35,32 @@
     
     <div class="space-y-6">
       <div>
-        <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-2">Adres Email</span>
-        <div class="font-mono text-lg text-foreground border-b border-white/10 pb-3">{currentUser?.email || "—"}</div>
+        <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-2">Imię i nazwisko</span>
+        <div class="font-mono text-lg text-foreground border-b border-white/10 pb-3">{displayName}</div>
       </div>
+      <div>
+        <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-2">Adres Email</span>
+        <div class="font-mono text-lg text-foreground border-b border-white/10 pb-3">{profile?.email || currentUser?.email || "—"}</div>
+      </div>
+      {#if profile?.phone}
+        <div>
+          <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-2">Telefon</span>
+          <div class="font-mono text-lg text-foreground border-b border-white/10 pb-3">{profile.phone}</div>
+        </div>
+      {/if}
+      {#if profile?.city}
+        <div>
+          <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-2">Miasto</span>
+          <div class="font-mono text-lg text-foreground border-b border-white/10 pb-3">{profile.city}</div>
+        </div>
+      {/if}
       <div>
         <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-2">Unikalny Identyfikator (UUID)</span>
         <div class="font-mono text-xs text-muted truncate p-3 bg-dark border border-white/5">{currentUser?.id || "—"}</div>
       </div>
       <div>
         <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-2">Data utworzenia</span>
-        <div class="font-mono text-sm text-foreground">{currentUser?.created_at ? new Date(currentUser.created_at).toLocaleDateString("pl-PL") : "—"}</div>
+        <div class="font-mono text-sm text-foreground">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString("pl-PL") : (currentUser?.created_at ? new Date(currentUser.created_at).toLocaleDateString("pl-PL") : "—")}</div>
       </div>
     </div>
   </div>

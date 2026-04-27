@@ -1,50 +1,50 @@
 import { atom } from "nanostores";
 import { supabaseBrowser } from "./supabase.browser";
-import type { User, Session } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
+import type { Profile } from "./types";
 
 export const authUser = atom<User | null>(null);
-export const authSession = atom<Session | null>(null);
-export const authIsLoading = atom<boolean>(true);
+export const authProfile = atom<Profile | null>(null);
 export const authModalOpen = atom<boolean>(false);
 
 export interface OrganizationMembership {
   organizationId: string;
   name: string;
+  slug: string;
+  city: string | null;
+  type: string;
   role: "owner" | "admin" | "member";
   inviteCode: string;
 }
 
 export const userOrganizations = atom<OrganizationMembership[]>([]);
 
-let authSubscription: { unsubscribe: () => void } | null = null;
-let isInitialized = false;
-
-function handleAuthStateChange(_event: string, session: Session | null) {
-  authSession.set(session);
-  authUser.set(session?.user ?? null);
-
-  if (session?.user) {
-    loadUserOrganizations(session.user.id)
-      .catch((err) => {
-        console.error("Failed to load organizations:", err);
-        userOrganizations.set([]);
-      })
-      .finally(() => {
-        authIsLoading.set(false);
-      });
-  } else {
-    userOrganizations.set([]);
-    authIsLoading.set(false);
-  }
-}
-
 interface OrgRow {
   role: string;
   organizations: {
     id: string;
     name: string;
+    slug: string;
+    city: string | null;
+    type: string;
     invite_code: string;
   };
+}
+
+export async function loadUserProfile(userId: string): Promise<void> {
+  const { data, error } = await supabaseBrowser
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    console.error("Failed to load user profile:", error);
+    authProfile.set(null);
+    return;
+  }
+
+  authProfile.set(data as Profile);
 }
 
 export async function loadUserOrganizations(userId: string): Promise<void> {
@@ -55,6 +55,9 @@ export async function loadUserOrganizations(userId: string): Promise<void> {
       organizations!inner (
         id,
         name,
+        slug,
+        city,
+        type,
         invite_code
       )
     `)
@@ -70,6 +73,9 @@ export async function loadUserOrganizations(userId: string): Promise<void> {
     (row) => ({
       organizationId: row.organizations.id,
       name: row.organizations.name,
+      slug: row.organizations.slug,
+      city: row.organizations.city,
+      type: row.organizations.type,
       role: row.role as "owner" | "admin" | "member",
       inviteCode: row.organizations.invite_code || "",
     })
@@ -78,52 +84,10 @@ export async function loadUserOrganizations(userId: string): Promise<void> {
   userOrganizations.set(mapped);
 }
 
-export async function initializeAuth(): Promise<void> {
-  if (isInitialized) return;
-  isInitialized = true;
-
-  try {
-    const { data, error } = await supabaseBrowser.auth.getSession();
-
-    if (error) {
-      console.error("Failed to get session:", error);
-      authIsLoading.set(false);
-      return;
-    }
-
-    const { session } = data;
-    authSession.set(session);
-    authUser.set(session?.user ?? null);
-
-    if (session?.user) {
-      await loadUserOrganizations(session.user.id);
-    }
-  } catch (err) {
-    console.error("Auth initialization failed:", err);
-  } finally {
-    authIsLoading.set(false);
-  }
-}
-
-export function startAuthStateListener(): void {
-  if (authSubscription) return;
-
-  const { data } = supabaseBrowser.auth.onAuthStateChange(handleAuthStateChange);
-  authSubscription = data.subscription;
-}
-
 export function openAuthModal(): void {
   authModalOpen.set(true);
 }
 
 export function closeAuthModal(): void {
   authModalOpen.set(false);
-}
-
-export function cleanupAuth(): void {
-  if (authSubscription) {
-    authSubscription.unsubscribe();
-    authSubscription = null;
-  }
-  isInitialized = false;
 }

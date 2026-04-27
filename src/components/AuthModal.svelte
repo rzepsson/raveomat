@@ -3,7 +3,7 @@
   import { cubicOut } from "svelte/easing";
   import { onMount } from "svelte";
   import { actions, isInputError } from "astro:actions";
-  import { authIsLoading, authModalOpen, authUser, closeAuthModal, loadUserOrganizations } from "../lib/authStore";
+  import { authModalOpen, authUser, closeAuthModal } from "../lib/authStore";
   import { supabaseBrowser } from "../lib/supabase.browser";
   import { HONEYPOT_FIELD_NAME } from "../lib/security/honeypot";
   import type { OAuthProvider } from "../lib/types";
@@ -72,12 +72,12 @@
         return;
       }
 
-      authUser.set(result.data.user as any);
-      authIsLoading.set(false);
-
-      await loadUserOrganizations(result.data.user.id);
-
+      authUser.set({
+        id: result.data.user.id,
+        email: result.data.user.email ?? "",
+      } as any);
       closeAuthModal();
+      window.location.assign("/panel/bilety");
     } catch {
       errorMessage = "Nie udało się połączyć z serwerem.";
     } finally {

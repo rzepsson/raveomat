@@ -439,6 +439,10 @@
         return "Wyprzedane";
       case "draft":
         return "Szkic";
+      case "cancelled":
+        return "Anulowane";
+      case "completed":
+        return "Zakończone";
       default:
         return status;
     }
@@ -451,6 +455,10 @@
       case "soldout":
         return "bg-red-500/10 text-red-400 border-red-500/30";
       case "draft":
+        return "bg-white/5 text-muted border-white/10";
+      case "cancelled":
+        return "bg-red-500/10 text-red-400 border-red-500/30";
+      case "completed":
         return "bg-white/5 text-muted border-white/10";
       default:
         return "bg-white/5 text-muted border-white/10";

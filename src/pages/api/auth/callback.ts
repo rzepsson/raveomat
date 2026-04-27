@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { waitForCookieCommit } from "../../../lib/supabase.server";
 
 export const GET: APIRoute = async ({ url, locals }) => {
   const code = url.searchParams.get("code");
@@ -18,6 +19,8 @@ export const GET: APIRoute = async ({ url, locals }) => {
       headers: { Location: "/?login=1" },
     });
   }
+
+  await waitForCookieCommit();
 
   return new Response(null, {
     status: 302,

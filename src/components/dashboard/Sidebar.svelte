@@ -9,7 +9,8 @@
     organizations: readonly OrganizationMembership[];
   }
 
-  let { currentTab, isPromoter }: Props = $props();
+  let { currentTab, isPromoter, organizations = [] }: Props = $props();
+  let currentUser = $state<{ email?: string | null } | null>(null);
 
   interface TabItem {
     id: string;
@@ -18,23 +19,33 @@
     locked?: boolean;
   }
 
+  $effect(() => {
+    const unsubscribe = authUser.subscribe((value) => {
+      currentUser = value ? { email: value.email } : null;
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  });
+
   const userTabs: TabItem[] = [
     { id: "bilety", label: "Moje Bilety", href: "/panel/bilety" },
     { id: "ustawienia", label: "Ustawienia Konta", href: "/panel/ustawienia" },
   ];
 
-  const promoterTabs: TabItem[] = (() => {
-    return isPromoter
+  const promoterTabs: TabItem[] = $derived(
+    isPromoter
       ? [
           { id: "organizacja", label: "Twoja Organizacja", href: "/panel/organizacja" },
           { id: "wydarzenia", label: "Wydarzenia", href: "/panel/wydarzenia" },
           { id: "skaner", label: "Skaner Biletów", href: "/panel/skaner" },
         ]
-      : [{ id: "promotor", label: "Zostań Promotorem", href: "/panel/promotor", locked: true }];
-  })();
+      : [{ id: "promotor", label: "Zostań Promotorem", href: "/panel/promotor", locked: true }]
+  );
 </script>
 
-<aside class="fixed left-0 top-20 bottom-0 w-80 bg-dark border-r-4 border-white/10 flex flex-col z-40">
+<aside class="fixed left-0 top-20 bottom-0 w-80 bg-dark border-r-4 border-white/10 flex flex-col z-50 pointer-events-auto">
   <div class="flex-1 overflow-y-auto py-8 px-6">
     <div class="mb-10">
       <h2 class="text-xs font-bold uppercase tracking-[0.3em] text-muted mb-6 pb-3 border-b-2 border-white/10">
@@ -77,7 +88,7 @@
       <Icon name="user" size={5} class="text-dark" />
     </div>
     <div class="flex-1 min-w-0">
-      <div class="text-sm font-bold text-foreground truncate">{$authUser?.email || 'Gość'}</div>
+      <div class="text-sm font-bold text-foreground truncate">{currentUser?.email || 'Gość'}</div>
       <div class="text-xs text-muted">Zalogowany</div>
     </div>
   </div>
