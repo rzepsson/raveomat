@@ -7,9 +7,11 @@
     currentTab: string;
     isPromoter: boolean;
     organizations: readonly OrganizationMembership[];
+    isOpen: boolean;
+    onClose: () => void;
   }
 
-  let { currentTab, isPromoter, organizations = [] }: Props = $props();
+  let { currentTab, isPromoter, organizations = [], isOpen, onClose }: Props = $props();
   let currentUser = $state<{ email?: string | null } | null>(null);
 
   interface TabItem {
@@ -45,17 +47,49 @@
   );
 </script>
 
-<aside class="fixed left-0 top-20 bottom-0 w-80 bg-dark border-r-4 border-white/10 flex flex-col z-50 pointer-events-auto">
-  <div class="flex-1 overflow-y-auto py-8 px-6">
-    <div class="mb-10">
-      <h2 class="text-xs font-bold uppercase tracking-[0.3em] text-muted mb-6 pb-3 border-b-2 border-white/10">
+{#if isOpen}
+  <div
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
+    role="button"
+    tabindex="-1"
+    aria-label="Zamknij menu"
+    onclick={onClose}
+    onkeydown={(e) => { if (e.key === "Escape") onClose(); }}
+  ></div>
+{/if}
+
+<aside
+  class="fixed left-0 top-0 bottom-0 w-80 bg-dark border-r border-white/10 flex flex-col z-50
+    transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+    {isOpen ? 'translate-x-0' : '-translate-x-full'}
+    lg:translate-x-0 lg:top-20 lg:bottom-0"
+>
+  <div class="flex items-center justify-between p-6 lg:hidden border-b border-white/10">
+    <span class="text-xs font-bold uppercase tracking-[0.3em] text-primary">Menu</span>
+    <button
+      type="button"
+      onclick={onClose}
+      class="w-10 h-10 flex items-center justify-center text-muted hover:text-foreground transition-colors"
+      aria-label="Zamknij menu"
+    >
+      <Icon name="close" size={5} />
+    </button>
+  </div>
+
+  <div class="flex-1 overflow-y-auto py-6 lg:py-8 px-5 lg:px-6 no-scrollbar">
+    <div class="mb-8">
+      <h2 class="text-[10px] font-bold uppercase tracking-[0.3em] text-muted mb-4 px-3 pb-2 border-b border-white/10">
         Panel Użytkownika
       </h2>
-      <nav class="space-y-2">
+      <nav class="space-y-1">
         {#each userTabs as tab}
           <a
             href={tab.href}
-            class="w-full text-left px-4 py-3 font-bold text-sm uppercase tracking-wider transition-all duration-200 block {currentTab === tab.id ? 'bg-primary text-dark' : 'text-foreground hover:bg-white/5 hover:text-primary'}"
+            onclick={onClose}
+            class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm uppercase tracking-wider transition-all duration-200 block
+              {currentTab === tab.id
+                ? 'bg-primary text-dark'
+                : 'text-foreground hover:bg-white/5 hover:text-primary'}"
           >
             {tab.label}
           </a>
@@ -64,14 +98,18 @@
     </div>
 
     <div>
-      <h2 class="text-xs font-bold uppercase tracking-[0.3em] text-muted mb-6 pb-3 border-b-2 border-white/10">
+      <h2 class="text-[10px] font-bold uppercase tracking-[0.3em] text-muted mb-4 px-3 pb-2 border-b border-white/10">
         {isPromoter ? 'Organizator' : 'Tryb Promotora'}
       </h2>
-      <nav class="space-y-2">
+      <nav class="space-y-1">
         {#each promoterTabs as tab}
           <a
             href={tab.href}
-            class="w-full text-left px-4 py-3 font-bold text-sm uppercase tracking-wider transition-all duration-200 flex items-center gap-3 {currentTab === tab.id ? 'bg-primary text-dark' : 'text-foreground hover:bg-white/5 hover:text-primary'}"
+            onclick={onClose}
+            class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm uppercase tracking-wider transition-all duration-200 flex items-center gap-3
+              {currentTab === tab.id
+                ? 'bg-primary text-dark'
+                : 'text-foreground hover:bg-white/5 hover:text-primary'}"
           >
             {#if tab.locked}
               <Icon name="lock" size={4} />
@@ -83,13 +121,15 @@
     </div>
   </div>
 
-  <div class="p-6 border-t-4 border-white/10 flex items-center gap-3">
-    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-      <Icon name="user" size={5} class="text-dark" />
-    </div>
-    <div class="flex-1 min-w-0">
-      <div class="text-sm font-bold text-foreground truncate">{currentUser?.email || 'Gość'}</div>
-      <div class="text-xs text-muted">Zalogowany</div>
+  <div class="p-5 lg:p-6 border-t border-white/10">
+    <div class="flex items-center gap-3 px-2">
+      <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+        <Icon name="user" size={5} class="text-foreground" />
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-bold text-foreground truncate">{currentUser?.email || 'Gość'}</div>
+        <div class="text-xs text-muted">Zalogowany</div>
+      </div>
     </div>
   </div>
 </aside>
