@@ -14,20 +14,16 @@
   let honeypot = $state("");
   let isSubmitting = $state(false);
   let errorMessage = $state("");
-  let isOpen = $state(false);
 
   let modalRef: HTMLDivElement | undefined = $state();
   let previousFocusEl: Element | null = null;
 
   $effect(() => {
-    return authModalOpen.subscribe(value => {
-      isOpen = value;
-      if (value) {
-        previousFocusEl = document.activeElement;
-      } else if (previousFocusEl instanceof HTMLElement) {
-        previousFocusEl.focus();
-      }
-    });
+    if ($authModalOpen) {
+      previousFocusEl = document.activeElement;
+    } else if (previousFocusEl instanceof HTMLElement) {
+      previousFocusEl.focus();
+    }
   });
 
   onMount(() => {
@@ -39,7 +35,7 @@
   });
 
   $effect(() => {
-    if (isOpen && modalRef) {
+    if ($authModalOpen && modalRef) {
       const firstInput = modalRef.querySelector<HTMLElement>(
         'input:not([disabled]), button:not([disabled])'
       );
@@ -75,7 +71,7 @@
       authUser.set({
         id: result.data.user.id,
         email: result.data.user.email ?? "",
-      } as any);
+      });
       closeAuthModal();
       window.location.assign("/panel/bilety");
     } catch {
@@ -143,7 +139,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#if isOpen}
+{#if $authModalOpen}
   <div 
     class="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6"
     role="dialog"

@@ -1,38 +1,11 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { createSupabaseServerClient } from "../lib/supabase.server";
-import type { OrgType } from "../lib/types";
+import { fetchPartnersServer } from "../lib/partners";
 
 const supabase = createSupabaseServerClient(Astro.cookies);
 
-interface PartnerOrg {
-  id: string;
-  name: string;
-  slug: string;
-  type: OrgType;
-  city: string | null;
-  description: string | null;
-  logo_url: string | null;
-  events: { id: string }[];
-}
-
-let partners: PartnerOrg[] = [];
-
-try {
-  const { data, error } = await supabase
-    .from("organizations")
-    .select("id, name, slug, type, city, description, logo_url, events(id)")
-    .eq("status", "active")
-    .order("name");
-
-  if (!error && data) {
-    partners = (data as PartnerOrg[]).sort(
-      (a, b) => (b.events?.length ?? 0) - (a.events?.length ?? 0)
-    );
-  }
-} catch (err) {
-  console.error("Failed to fetch partners:", err);
-}
+let partners = await fetchPartnersServer(supabase);
 ---
 
 <Layout
@@ -81,7 +54,7 @@ try {
               <div class="flex items-center gap-3 text-muted text-xs font-bold uppercase tracking-widest mb-6">
                 {p.city && <span>{p.city}</span>}
                 {p.city && <span class="w-1 h-1 rounded-full bg-white/20"></span>}
-                <span>{p.events?.length ?? 0} Wydarzeń</span>
+                <span>{p.eventCount} Wydarzeń</span>
               </div>
 
               <div class="flex items-center gap-2 text-sm font-bold text-muted group-hover:text-primary transition-colors duration-300">

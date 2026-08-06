@@ -3,7 +3,6 @@ export const prerender = false;
 
 import Layout from "../../layouts/Layout.astro";
 import EventCheckout from "../../components/EventCheckout.svelte";
-import { createSupabaseServerClient } from "../../lib/supabase.server";
 import type { EventDetails } from "../../lib/types";
 
 const { id } = Astro.params;
@@ -12,7 +11,7 @@ if (!id) {
   return Astro.redirect("/wydarzenia");
 }
 
-const supabase = createSupabaseServerClient(Astro.cookies);
+const supabase = Astro.locals.supabase;
 
 const { data, error } = await supabase
   .from("events")

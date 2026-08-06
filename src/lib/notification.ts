@@ -10,11 +10,15 @@ export interface Notification {
 
 export const notifications = atom<Notification[]>([]);
 
+const MAX_NOTIFICATIONS = 5;
 let _counter = 0;
 
 export function pushNotification(type: NotificationType, message: string, durationMs = 5000): void {
   const id = String(++_counter);
-  notifications.update((list) => [...list, { id, type, message }]);
+  notifications.update((list) => {
+    const next = [...list, { id, type, message }];
+    return next.length > MAX_NOTIFICATIONS ? next.slice(-MAX_NOTIFICATIONS) : next;
+  });
   setTimeout(() => {
     notifications.update((list) => list.filter((n) => n.id !== id));
   }, durationMs);

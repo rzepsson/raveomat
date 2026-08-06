@@ -3,7 +3,29 @@ import { supabaseBrowser } from "./supabase.browser";
 import type { User } from "@supabase/supabase-js";
 import type { Profile } from "./types";
 
-export const authUser = atom<User | null>(null);
+export interface AuthUser {
+  id: string;
+  email: string | undefined;
+  app_metadata?: Record<string, unknown>;
+  user_metadata?: Record<string, unknown>;
+  created_at?: string;
+}
+
+function toAuthUser(user: User | { id: string; email: string }): AuthUser {
+  return {
+    id: user.id,
+    email: user.email ?? undefined,
+    app_metadata: "app_metadata" in user ? user.app_metadata : undefined,
+    user_metadata: "user_metadata" in user ? user.user_metadata : undefined,
+    created_at: "created_at" in user ? user.created_at : undefined,
+  };
+}
+
+export function setAuthUserFromSupabase(user: User | null): void {
+  authUser.set(user ? toAuthUser(user) : null);
+}
+
+export const authUser = atom<AuthUser | null>(null);
 export const authProfile = atom<Profile | null>(null);
 export const authModalOpen = atom<boolean>(false);
 

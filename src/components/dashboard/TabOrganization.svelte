@@ -1,19 +1,9 @@
 <script lang="ts">
   import { userOrganizations } from "../../lib/authStore";
-  import type { OrganizationMembership } from "../../lib/authStore";
   import Icon from "../Icon.svelte";
-
-  let organizations = $state<readonly OrganizationMembership[]>([]);
-
-  $effect(() => {
-    const unsub = userOrganizations.subscribe((value) => {
-      organizations = value;
-    });
-    return unsub;
-  });
 </script>
 
-{#if organizations.length === 0}
+{#if $userOrganizations.length === 0}
   <div class="border border-dashed border-white/10 bg-white/5 p-16 flex flex-col items-center justify-center text-center">
     <Icon name="building" size={16} class="text-muted mb-6" />
     <h3 class="text-2xl font-display uppercase text-foreground mb-4 tracking-tighter">Brak Organizacji</h3>
@@ -24,7 +14,7 @@
   </div>
 {:else}
   <div class="grid lg:grid-cols-2 gap-8">
-    {#each organizations as org}
+    {#each $userOrganizations as org}
       <div class="relative bg-dark border border-white/20 p-8 overflow-hidden group">
         <div class="absolute inset-0 bg-primary/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
         <div class="relative z-10">

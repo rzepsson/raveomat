@@ -13,7 +13,8 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.8",
@@ -33,9 +34,11 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@vitest/ui": "^4.1.4",
     "ffmpeg-static": "^5.3.0",
     "oxlint": "^1.60.0",
+    "supabase": "^2.95.5",
     "vitest": "^4.1.4"
   }
 }

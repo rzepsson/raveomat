@@ -1,23 +1,15 @@
 <script lang="ts">
   import { notifications, dismissNotification } from "../lib/notification";
   import Icon from "./Icon.svelte";
-
-  let items = $state<typeof $notifications>([]);
-
-  $effect(() => {
-    return notifications.subscribe((value) => {
-      items = value;
-    });
-  });
 </script>
 
-{#if items.length > 0}
+{#if $notifications.length > 0}
   <div
     class="fixed top-24 right-6 z-200 flex flex-col gap-3 max-w-sm w-full pointer-events-none"
     aria-live="polite"
     aria-atomic="true"
   >
-    {#each items as notification (notification.id)}
+    {#each $notifications as notification (notification.id)}
       <div
         class="pointer-events-auto flex items-start gap-3 p-4 border backdrop-blur-xl shadow-2xl {notification.type === 'error'
           ? 'bg-accent/10 border-accent/30 text-accent'

@@ -1,28 +1,21 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { User } from "@supabase/supabase-js";
   import { authUser, loadUserProfile, loadUserOrganizations, userOrganizations } from "../../lib/authStore";
   import type { OrganizationMembership } from "../../lib/authStore";
   import Sidebar from "./Sidebar.svelte";
   import Icon from "../Icon.svelte";
 
-  interface InitialUser {
-    id: string;
-    email: string;
-  }
-
   interface Props {
     activePath: string;
-    initialUser?: InitialUser | null;
+    initialUser?: { id: string; email: string } | null;
     children?: Snippet;
   }
 
   let { activePath, initialUser = null, children }: Props = $props();
 
-  let currentUser: User | null = $state(null);
-  let organizations = $state<readonly OrganizationMembership[]>([]);
-  let isPromoter = $state(false);
   let isSidebarOpen = $state(false);
+
+  const isPromoter = $derived($userOrganizations.length > 0);
 
   function toggleSidebar() {
     isSidebarOpen = !isSidebarOpen;
@@ -34,36 +27,14 @@
 
   $effect(() => {
     if (initialUser) {
-      currentUser = { id: initialUser.id, email: initialUser.email } as User;
-      authUser.set({ id: initialUser.id, email: initialUser.email } as User);
+      authUser.set({ id: initialUser.id, email: initialUser.email });
     }
   });
 
   $effect(() => {
-    const unsubUser = authUser.subscribe((value) => {
-      currentUser = value;
-    });
-
-    return () => {
-      unsubUser();
-    };
-  });
-
-  $effect(() => {
-    const unsubOrgs = userOrganizations.subscribe((value) => {
-      organizations = value;
-      isPromoter = value.length > 0;
-    });
-
-    return () => {
-      unsubOrgs();
-    };
-  });
-
-  $effect(() => {
-    if (currentUser) {
-      void loadUserProfile(currentUser.id);
-      void loadUserOrganizations(currentUser.id);
+    if ($authUser) {
+      void loadUserProfile($authUser.id);
+      void loadUserOrganizations($authUser.id);
     } else {
       userOrganizations.set([]);
     }
@@ -95,7 +66,7 @@
 </script>
 
 <div class="min-h-screen bg-dark flex pt-20 lg:pt-24">
-  <Sidebar {currentTab} {isPromoter} {organizations} isOpen={isSidebarOpen} onClose={closeSidebar} />
+  <Sidebar {currentTab} {isPromoter} organizations={$userOrganizations} isOpen={isSidebarOpen} onClose={closeSidebar} />
 
   <main class="flex-1 ml-0 lg:ml-80 min-w-0">
     <div class="max-w-6xl mx-auto">

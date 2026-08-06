@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { authUser, openAuthModal } from "../lib/authStore";
   import type { EventDetails } from "../lib/types";
   import { MAX_TICKETS_PER_PURCHASE } from "../lib/types";
@@ -16,19 +15,13 @@
   let event = $state<EventDetails | null>(initialEvent ?? null);
   let isLoading = $state(!initialEvent);
   let errorMessage = $state("");
-  let isAuthenticated = $state(false);
-  
+
+  const isAuthenticated = $derived($authUser !== null);
+
   let ticketCount = $state(1);
   const totalTickets = $derived(event?.total_tickets || 0);
-  const remainingTickets = $derived(event ? (event.total_tickets || 0) - (event.sold_tickets || 0) : 0);
+  const remainingTickets = $derived(event ? Math.max(0, (event.total_tickets || 0) - (event.sold_tickets || 0)) : 0);
   const availabilityPercent = $derived(safePercent(remainingTickets, totalTickets));
-
-  onMount(() => {
-    const unsubscribe = authUser.subscribe(user => {
-      isAuthenticated = user !== null;
-    });
-    return unsubscribe;
-  });
 
   const formattedDate = $derived(formatDateLong(event?.date ?? ""));
   const formattedPrice = $derived(event?.price ? formatPrice(event.price) : "");

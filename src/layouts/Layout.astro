@@ -31,6 +31,13 @@ const {
 } = Astro.props;
 
 const SITE_URL = "https://raveomat.pl";
+const supabaseOrigin = (() => {
+  try {
+    return new URL(import.meta.env.PUBLIC_SUPABASE_URL ?? "").origin;
+  } catch {
+    return "";
+  }
+})();
 const resolvedCanonical = new URL(canonical ?? Astro.url.pathname, SITE_URL).toString();
 const resolvedOgImage = new URL(ogImage ?? "/content/rave_poster.jpg", SITE_URL).toString();
 const resolvedRobots = noindex
@@ -68,8 +75,12 @@ const initialUser = Astro.locals.user
 
     <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://vrhiylrustvfxzixabmb.supabase.co" />
-    <link rel="dns-prefetch" href="https://vrhiylrustvfxzixabmb.supabase.co" />
+    {supabaseOrigin && (
+      <>
+        <link rel="preconnect" href={supabaseOrigin} />
+        <link rel="dns-prefetch" href={supabaseOrigin} />
+      </>
+    )}
     {
       jsonLdNodes.map((node) => (
         <script type="application/ld+json" set:html={JSON.stringify(node)} />

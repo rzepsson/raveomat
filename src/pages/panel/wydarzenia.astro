@@ -3,7 +3,6 @@ export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
 import DashboardLayout from '../../components/dashboard/DashboardLayout.svelte';
 import TabEvents from '../../components/dashboard/TabEvents.svelte';
-import { createSupabaseServerClient } from '../../lib/supabase.server';
 import type { EventGenre, EventType, EventStatus } from '../../lib/types';
 
 const initialUser = Astro.locals.user
@@ -29,7 +28,7 @@ interface EventRow {
 let initialEvents: EventRow[] = [];
 
 if (Astro.locals.user) {
-  const supabase = createSupabaseServerClient(Astro.cookies);
+  const supabase = Astro.locals.supabase;
 
   const { data: orgData } = await supabase
     .from("organization_members")

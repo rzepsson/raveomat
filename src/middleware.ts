@@ -39,6 +39,8 @@ async function maybeCompress(response: Response, acceptEncoding: string): Promis
 
   if (!isCompressible || !response.body) return response;
 
+  if ((response.body as ReadableStream).locked) return response;
+
   const contentLength = response.headers.get("content-length");
   if (contentLength && parseInt(contentLength, 10) < 512) return response;
 

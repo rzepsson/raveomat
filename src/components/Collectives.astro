@@ -1,5 +1,12 @@
 ---
-import { marqueePartners } from "../lib/partners";
+import type { Partner } from "../lib/partners";
+
+interface Props {
+  partners: Partner[];
+}
+
+const { partners } = Astro.props;
+const marqueePartners = partners.length > 0 ? [...partners, ...partners] : [];
 ---
 
 <section id="partnerzy" class="relative bg-dark overflow-hidden">

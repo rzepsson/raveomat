@@ -1,10 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import TicketGrid from "../components/TicketGrid.svelte";
-import { createSupabaseServerClient } from "../lib/supabase.server";
 import type { EventGenre, EventType, EventStatus } from "../lib/types";
 
-const supabase = createSupabaseServerClient(Astro.cookies);
+const supabase = Astro.locals.supabase;
 
 interface EventRow {
   id: string;

@@ -75,6 +75,7 @@
   let cropContainerRef = $state<HTMLDivElement | null>(null);
   let imageNaturalWidth = $state(1);
   let imageNaturalHeight = $state(1);
+  let loadGeneration = $state(0);
 
   const effectiveOrganizations = $derived(
     organizations && organizations.length > 0 ? organizations : $userOrganizations
@@ -88,11 +89,12 @@
 
   $effect(() => {
     if (activeOrganizationId) {
-      loadEvents();
+      loadGeneration++;
+      void loadEvents(loadGeneration);
     }
   });
 
-  async function loadEvents() {
+  async function loadEvents(generation: number) {
     if (!activeOrganizationId) return;
 
     isLoading = true;
@@ -103,6 +105,8 @@
       .select("*")
       .eq("organization_id", activeOrganizationId)
       .order("date", { ascending: true });
+
+    if (generation !== loadGeneration) return;
 
     if (error) {
       errorMessage = error.message;
@@ -426,7 +430,7 @@
     }
 
     croppedImageBlob = null;
-    await loadEvents();
+    await loadEvents(loadGeneration);
     currentView = "list";
     isSaving = false;
   }

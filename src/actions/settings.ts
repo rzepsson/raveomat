@@ -158,7 +158,7 @@ export const sendPasswordReset = defineAction({
       : undefined;
 
     const { error } = await context.locals.supabase.auth.resetPasswordForEmail(email, {
-      ...(redirectTo ? { redirectTo } : {}),
+      ...(redirectTo ? { redirectTo } : undefined),
     });
 
     if (error) {

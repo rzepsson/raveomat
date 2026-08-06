@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly UPSTASH_REDIS_REST_TOKEN?: string;
   readonly PUBLIC_SUPABASE_URL?: string;
   readonly PUBLIC_SUPABASE_ANON_KEY?: string;
+  readonly DATABASE_URL?: string;
 }
 
 interface ImportMeta {

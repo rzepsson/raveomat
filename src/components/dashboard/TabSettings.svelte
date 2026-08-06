@@ -1,34 +1,16 @@
 <script lang="ts">
-  import type { User } from "@supabase/supabase-js";
   import { actions, isInputError } from "astro:actions";
   import { authUser, authProfile, loadUserProfile } from "../../lib/authStore";
   import { pushNotification } from "../../lib/notification";
   import type { Profile } from "../../lib/types";
   import Icon from "../Icon.svelte";
 
-  let currentUser: User | null = $state(null);
-  let profile: Profile | null = $state(null);
-
-  $effect(() => {
-    const unsub = authUser.subscribe((value) => {
-      currentUser = value;
-    });
-    return unsub;
-  });
-
-  $effect(() => {
-    const unsub = authProfile.subscribe((value) => {
-      profile = value;
-    });
-    return unsub;
-  });
-
   const displayName = $derived(
-    profile?.full_name || currentUser?.user_metadata?.full_name || "—"
+    $authProfile?.full_name || $authUser?.user_metadata?.full_name || "—"
   );
 
   const authProvider = $derived.by(() => {
-    const providers = currentUser?.app_metadata?.providers;
+    const providers = $authUser?.app_metadata?.providers;
     if (!providers || !Array.isArray(providers)) return "email";
     if (providers.includes("google")) return "google";
     if (providers.includes("apple")) return "apple";
@@ -75,9 +57,9 @@
   let editCity = $state("");
 
   function startEditProfile() {
-    editFullName = profile?.full_name || currentUser?.user_metadata?.full_name || "";
-    editPhone = profile?.phone || "";
-    editCity = profile?.city || "";
+    editFullName = $authProfile?.full_name || $authUser?.user_metadata?.full_name || "";
+    editPhone = $authProfile?.phone || "";
+    editCity = $authProfile?.city || "";
     isEditingProfile = true;
   }
 
@@ -86,7 +68,7 @@
   }
 
   async function saveProfile() {
-    if (!currentUser) return;
+    if (!$authUser) return;
     isSavingProfile = true;
 
     try {
@@ -110,7 +92,7 @@
         return;
       }
 
-      await loadUserProfile(currentUser.id);
+      await loadUserProfile($authUser.id);
       isEditingProfile = false;
       pushNotification("success", "Profil został zaktualizowany.");
     } catch {
@@ -217,7 +199,7 @@
   let isSendingReset = $state(false);
 
   async function handleSendReset() {
-    if (!currentUser) return;
+    if (!$authUser) return;
     isSendingReset = true;
 
     try {
@@ -228,7 +210,7 @@
         return;
       }
 
-      pushNotification("success", `Link do resetowania hasła został wysłany na ${currentUser.email}.`);
+      pushNotification("success", `Link do resetowania hasła został wysłany na ${$authUser.email}.`);
     } catch {
       pushNotification("error", "Nie udało się połączyć z serwerem.");
     } finally {
@@ -270,18 +252,18 @@
           </div>
           <div>
             <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-1.5">Adres Email</span>
-            <div class="text-sm text-foreground font-medium truncate">{profile?.email || currentUser?.email || "—"}</div>
+            <div class="text-sm text-foreground font-medium truncate">{$authProfile?.email || $authUser?.email || "—"}</div>
           </div>
           <div>
             <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-1.5">Telefon</span>
-            <div class="text-sm {profile?.phone ? 'text-foreground' : 'text-muted/50'} font-medium">
-              {profile?.phone || "Nie ustawiono"}
+            <div class="text-sm {$authProfile?.phone ? 'text-foreground' : 'text-muted/50'} font-medium">
+              {$authProfile?.phone || "Nie ustawiono"}
             </div>
           </div>
           <div>
             <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-1.5">Miasto</span>
-            <div class="text-sm {profile?.city ? 'text-foreground' : 'text-muted/50'} font-medium">
-              {profile?.city || "Nie ustawiono"}
+            <div class="text-sm {$authProfile?.city ? 'text-foreground' : 'text-muted/50'} font-medium">
+              {$authProfile?.city || "Nie ustawiono"}
             </div>
           </div>
         </div>
@@ -573,7 +555,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
           <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-1.5">Adres Email</span>
-          <div class="text-sm text-foreground font-medium truncate">{profile?.email || currentUser?.email || "—"}</div>
+          <div class="text-sm text-foreground font-medium truncate">{$authProfile?.email || $authUser?.email || "—"}</div>
         </div>
         <div>
           <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-1.5">Dostawca logowania</span>
@@ -590,7 +572,7 @@
         </div>
         <div>
           <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-1.5">Weryfikacja email</span>
-          {#if profile?.email_verified}
+          {#if $authProfile?.email_verified}
             <span class="inline-flex items-center gap-1.5 text-success text-xs font-bold uppercase tracking-widest">
               <Icon name="check" size={4} />
               Zweryfikowany
@@ -605,19 +587,19 @@
         <div>
           <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-1.5">Data utworzenia</span>
           <div class="text-sm text-foreground font-medium">
-            {formatDate(profile?.created_at || currentUser?.created_at)}
+            {formatDate($authProfile?.created_at || $authUser?.created_at)}
           </div>
         </div>
         <div>
           <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-1.5">Ostatnia aktualizacja</span>
           <div class="text-sm text-foreground font-medium">
-            {formatDate(profile?.updated_at)}
+            {formatDate($authProfile?.updated_at)}
           </div>
         </div>
         <div>
           <span class="text-[10px] uppercase tracking-[0.2em] text-muted block mb-1.5">Identyfikator</span>
           <div class="text-xs text-muted font-mono bg-dark/50 p-2.5 border border-white/5 select-all rounded truncate">
-            {currentUser?.id || "—"}
+            {$authUser?.id || "—"}
           </div>
         </div>
       </div>

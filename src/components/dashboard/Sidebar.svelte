@@ -12,7 +12,6 @@
   }
 
   let { currentTab, isPromoter, organizations = [], isOpen, onClose }: Props = $props();
-  let currentUser = $state<{ email?: string | null } | null>(null);
 
   interface TabItem {
     id: string;
@@ -20,16 +19,6 @@
     href: string;
     locked?: boolean;
   }
-
-  $effect(() => {
-    const unsubscribe = authUser.subscribe((value) => {
-      currentUser = value ? { email: value.email } : null;
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  });
 
   const userTabs: TabItem[] = [
     { id: "bilety", label: "Moje Bilety", href: "/panel/bilety" },
@@ -49,7 +38,7 @@
 
 {#if isOpen}
   <div
-    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
     role="button"
     tabindex="-1"
     aria-label="Zamknij menu"
@@ -60,7 +49,6 @@
 
 <aside
   class="fixed left-0 top-0 bottom-0 w-80 bg-dark border-r border-white/10 flex flex-col z-50
-    transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
     {isOpen ? 'translate-x-0' : '-translate-x-full'}
     lg:translate-x-0 lg:top-20 lg:bottom-0"
 >
@@ -86,7 +74,8 @@
           <a
             href={tab.href}
             onclick={onClose}
-            class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm uppercase tracking-wider transition-all duration-200 block
+            aria-current={currentTab === tab.id ? "page" : undefined}
+            class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm uppercase tracking-wider block
               {currentTab === tab.id
                 ? 'bg-primary text-dark'
                 : 'text-foreground hover:bg-white/5 hover:text-primary'}"
@@ -106,7 +95,8 @@
           <a
             href={tab.href}
             onclick={onClose}
-            class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm uppercase tracking-wider transition-all duration-200 flex items-center gap-3
+            aria-current={currentTab === tab.id ? "page" : undefined}
+            class="w-full text-left px-4 py-3 rounded-lg font-bold text-sm uppercase tracking-wider flex items-center gap-3
               {currentTab === tab.id
                 ? 'bg-primary text-dark'
                 : 'text-foreground hover:bg-white/5 hover:text-primary'}"
@@ -127,7 +117,7 @@
         <Icon name="user" size={5} class="text-foreground" />
       </div>
       <div class="flex-1 min-w-0">
-        <div class="text-sm font-bold text-foreground truncate">{currentUser?.email || 'Gość'}</div>
+        <div class="text-sm font-bold text-foreground truncate">{$authUser?.email || 'Gość'}</div>
         <div class="text-xs text-muted">Zalogowany</div>
       </div>
     </div>

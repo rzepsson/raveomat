@@ -2,6 +2,13 @@
 dist/
 # generated types
 .astro/
+tsconfig.tsbuildinfo
+
+# supabase cli local state
+supabase/.temp/
+
+# ai agent scratch
+.kilo/
 
 # dependencies
 node_modules/

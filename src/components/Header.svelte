@@ -1,51 +1,28 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { actions } from "astro:actions";
-  import { authModalOpen, authUser, openAuthModal, userOrganizations } from "../lib/authStore";
+  import { authModalOpen, authUser, openAuthModal, setAuthUserFromSupabase, userOrganizations } from "../lib/authStore";
   import { supabaseBrowser } from "../lib/supabase.browser";
   import AuthModal from "./AuthModal.svelte";
   import Icon from "./Icon.svelte";
 
-  interface InitialUser {
-    id: string;
-    email: string;
-  }
-
   interface Props {
     showLogo?: boolean;
-    initialUser?: InitialUser | null;
+    initialUser?: { id: string; email: string } | null;
   }
 
   let { showLogo = false, initialUser = null }: Props = $props();
 
-  let user = $state<InitialUser | null>(null);
-  let isModalOpen = $state(false);
+  const user = $derived(
+    $authUser ? { id: $authUser.id, email: $authUser.email ?? "" } : null
+  );
+  const isModalOpen = $derived($authModalOpen);
   let isMobileMenuOpen = $state(false);
 
   $effect(() => {
     if (initialUser) {
-      authUser.set(initialUser as any);
+      authUser.set({ id: initialUser.id, email: initialUser.email });
     }
-  });
-
-  $effect(() => {
-    const unsubscribeUser = authUser.subscribe((value) => {
-      user = value ? { id: value.id, email: value.email ?? "" } : null;
-    });
-
-    return () => {
-      unsubscribeUser();
-    };
-  });
-
-  $effect(() => {
-    const unsubscribeModal = authModalOpen.subscribe((value) => {
-      isModalOpen = value;
-    });
-
-    return () => {
-      unsubscribeModal();
-    };
   });
 
   onMount(() => {
@@ -53,13 +30,13 @@
 
     void supabaseBrowser.auth.getSession().then(({ data }) => {
       if (!mounted) return;
-      authUser.set(data.session?.user ?? null);
+      setAuthUserFromSupabase(data.session?.user ?? null);
     });
 
     const {
       data: { subscription },
     } = supabaseBrowser.auth.onAuthStateChange((_event, session) => {
-      authUser.set(session?.user ?? null);
+      setAuthUserFromSupabase(session?.user ?? null);
       if (!session) {
         userOrganizations.set([]);
       }
